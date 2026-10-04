@@ -8,6 +8,34 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+@page { size: A4; margin: 12mm; }
+@media print {
+  .navbar,.tb,.lh-actions,.no-print,.ni,.nb-stats,.nb-nav { display:none!important; }
+  body { background:#fff!important; margin:0; }
+  .main { padding:0!important; max-width:none!important; }
+  .page { display:none!important; }
+  #printArea, #printArea * { visibility:visible!important; }
+  #printArea { display:block!important; }
+  .ack-page { page-break-after: always; }
+  .ack-page:last-child { page-break-after: auto; }
+}
+#printArea { display:none; }
+.ack-sheet {
+  font-family:'Space Grotesk',sans-serif; max-width:190mm; margin:0 auto;
+  border:3px solid #0C0C0C; padding:18px 22px; background:#fff; color:#0C0C0C;
+}
+.ack-head { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #C94A00; padding-bottom:10px; margin-bottom:12px; }
+.ack-brand { font-family:'Bebas Neue',sans-serif; font-size:28px; letter-spacing:2px; }
+.ack-sub { font-family:'DM Mono',monospace; font-size:10px; color:#555; }
+.ack-copy { font-family:'DM Mono',monospace; font-size:10px; border:2px solid #0C0C0C; padding:4px 8px; }
+.ack-row { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px dashed #ccc; font-size:13px; }
+.ack-row.total { font-weight:700; font-size:16px; border-bottom:none; margin-top:8px; border-top:2px solid #0C0C0C; padding-top:8px; }
+.ack-banks { margin-top:14px; font-size:12px; border:2px solid #0C0C0C; padding:10px; background:#F0E8D0; }
+.series-banner { font-family:'Bebas Neue',sans-serif; font-size:42px; letter-spacing:3px; color:var(--accent); line-height:1; margin-bottom:4px; }
+.report-group { margin-bottom:18px; }
+.report-group h3 { font-family:'Bebas Neue',sans-serif; font-size:20px; border-left:6px solid var(--accent); padding-left:10px; margin-bottom:8px; }
+</style>
 </head>
 <body>
 
@@ -34,21 +62,26 @@
       <div class="sc y"><div class="sc-lbl">Outstanding</div><div class="sc-val" id="statOutstanding">0</div><div class="sc-sub">PKR</div></div>
       <div class="sc t"><div class="sc-lbl">Entries</div><div class="sc-val" id="statEntries">0</div><div class="sc-sub">All time</div></div>
     </div>
-    <div class="tb">
+    <div class="tb no-print">
       <button class="btn prim" onclick="showPage('actions')">+ Add Record / Receiving</button>
       <button class="btn" onclick="showPage('clients')">View Clients</button>
       <button class="btn" onclick="loadDashboard()">Refresh</button>
     </div>
     <div class="ledger-page" style="margin-top:12px;">
       <div class="ledger-header" style="padding:12px 16px;"><strong style="font-family:'Bebas Neue';font-size:18px;">RECENT ACTIVITY</strong></div>
-      <div style="overflow-x:auto;"><table class="lt" id="recentTable"><thead><tr><th>Date</th><th>Client</th><th>Type</th><th>Stage</th><th>TM / Details</th><th>Due</th><th>Received</th></tr></thead><tbody></tbody></table></div>
+      <div style="overflow-x:auto;min-height:80px;">
+        <table class="lt" id="recentTable" style="width:100%;min-width:640px;">
+          <thead><tr><th>Date</th><th>Client</th><th>Type</th><th>Stage</th><th>TM / Details</th><th>Due</th><th>Received</th></tr></thead>
+          <tbody id="recentTableBody"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
   <div class="page" id="page-clients">
-    <div class="ph"><div class="ph-title">Clients</div><div class="ph-sub">Multi-series accounts · Custom stage rates</div></div>
+    <div class="ph"><div class="ph-title">Clients</div><div class="ph-sub">Multi-series · Custom stage rates</div></div>
     <div class="tb">
-      <input class="srch" id="clientSearch" placeholder="Search code, name, city…" oninput="renderClients()">
+      <input class="srch" id="clientSearch" placeholder="Search code, name, city, phone…" oninput="renderClients()">
       <select class="fsel" id="seriesFilter" style="width:140px;" onchange="renderClients()"><option value="">All Series</option></select>
       <button class="btn prim" onclick="openClientModal()">+ New Client</button>
     </div>
@@ -56,28 +89,51 @@
   </div>
 
   <div class="page" id="page-actions">
-    <div class="ph"><div class="ph-title">Actions</div><div class="ph-sub">Two modes · Add Record (TM) · Add Receiving</div></div>
+    <div class="ph"><div class="ph-title">Actions</div><div class="ph-sub">Add Record · Add Receiving</div></div>
     <div class="sg" style="grid-template-columns:1fr 1fr;">
-      <div class="sc b" style="cursor:pointer;" onclick="openChargeModal()"><div class="sc-lbl">Mode 1</div><div class="sc-val" style="font-size:26px;">ADD RECORD</div><div class="sc-sub">Charge by TM · stage rate</div></div>
-      <div class="sc g" style="cursor:pointer;" onclick="openReceivingModal()"><div class="sc-lbl">Mode 2</div><div class="sc-val" style="font-size:26px;">ADD RECEIVING</div><div class="sc-sub">Payment · receipt</div></div>
+      <div class="sc b" style="cursor:pointer;" onclick="openChargeModal()"><div class="sc-lbl">Mode 1</div><div class="sc-val" style="font-size:26px;">ADD RECORD</div><div class="sc-sub">Charge · Stage rate · TM</div></div>
+      <div class="sc g" style="cursor:pointer;" onclick="openReceivingModal()"><div class="sc-lbl">Mode 2</div><div class="sc-val" style="font-size:26px;">ADD RECEIVING</div><div class="sc-sub">Payment · print from ledger</div></div>
     </div>
   </div>
 
   <div class="page" id="page-reports">
-    <div class="ph"><div class="ph-title">Reports &amp; Export</div><div class="ph-sub">Filter · stage · export</div></div>
+    <div class="ph"><div class="ph-title">Reports &amp; Export</div><div class="ph-sub">Client · Case / TM · Stage · Print A4 PDF</div></div>
     <div class="tb">
-      <input class="srch" id="reportSearch" placeholder="Filter by TM, client…">
-      <select class="fsel" id="reportStage" style="width:120px;"><option value="">All Stages</option><option value="S1">S1</option><option value="S2">S2</option><option value="S3">S3</option><option value="S4">S4</option></select>
+      <select class="fsel" id="reportClient" style="width:160px;" onchange="runReport()"><option value="">All Clients</option></select>
+      <input class="srch" id="reportSearch" placeholder="TM / application / folder…">
+      <select class="fsel" id="reportStage" style="width:130px;">
+        <option value="">All Stages</option>
+        <option value="S1">Stage 1</option><option value="S2">Stage 2</option>
+        <option value="S3">Stage 3</option><option value="S4">Stage 4</option>
+      </select>
+      <select class="fsel" id="reportGroup" style="width:140px;">
+        <option value="flat">Flat list</option>
+        <option value="client">By Client</option>
+        <option value="case">By Case / TM</option>
+        <option value="stage">By Stage</option>
+      </select>
+      <input class="fi" id="reportFrom" type="date" style="width:140px;" title="From">
+      <input class="fi" id="reportTo" type="date" style="width:140px;" title="To">
       <button class="btn" onclick="runReport()">Apply</button>
       <button class="btn ok" onclick="exportCSV(false)">Export CSV</button>
-      <button class="btn warn" onclick="exportCSV(true)">Export Selected</button>
-      <button class="btn" onclick="exportImage()">Export Image</button>
+      <button class="btn warn" onclick="printSelectedA4()">Print Selected A4 PDF</button>
+      <button class="btn" onclick="printReportA4()">Print View A4 PDF</button>
     </div>
-    <div class="ledger-page" id="reportView"><div style="overflow-x:auto;"><table class="lt" id="reportTable"><thead><tr><th><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"></th><th>Date</th><th>Client</th><th>Type</th><th>Stage</th><th>TM</th><th>Details</th><th>Due</th><th>Received</th></tr></thead><tbody></tbody></table></div></div>
+    <div class="ledger-page" id="reportView">
+      <div style="overflow-x:auto;min-height:80px;" id="reportContent">
+        <table class="lt" id="reportTable" style="width:100%;min-width:700px;">
+          <thead><tr>
+            <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"></th>
+            <th>Date</th><th>Client</th><th>Type</th><th>Stage</th><th>TM</th><th>Details</th><th>Due</th><th>Received</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <div class="page" id="page-ledger">
-    <div class="ph"><div class="ph-title" id="ledgerTitle">Client Ledger</div><div class="ph-sub">Full history · Current view = last + 5 previous</div></div>
+    <div class="ph"><div class="ph-title" id="ledgerTitle">Client Ledger</div><div class="ph-sub" id="ledgerSub">Case-wise · Stage outstanding</div></div>
     <div class="ledger-page" id="clientLedgerBox">
       <div class="ledger-header">
         <div class="lh-3boxes">
@@ -85,17 +141,26 @@
           <div class="lh-box"><div class="lh-box-lbl">Name</div><div class="lh-box-val" id="lhName" style="font-size:20px;">—</div></div>
           <div class="lh-box"><div class="lh-box-lbl">Balance</div><div class="lh-box-val" id="lhBal">—</div></div>
         </div>
+        <div id="lhContact" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);margin:8px 0;"></div>
         <div class="lh-actions no-print">
           <button class="btn prim sm" onclick="openChargeModal(currentClientId)">+ Charge</button>
           <button class="btn ok sm" onclick="openReceivingModal(currentClientId)">+ Receiving</button>
           <button class="btn sm" onclick="toggleCurrentView()">Current View</button>
-          <button class="btn sm" onclick="printLedger()">Print</button>
+          <button class="btn sm" onclick="printLedgerA4()">Print Ledger A4 PDF</button>
           <button class="btn sm" onclick="openEditCaseModal()">Edit Case / TM</button>
           <button class="btn sm" onclick="showPage('clients')">← Back</button>
         </div>
       </div>
       <div id="stageOutstanding" class="sg" style="grid-template-columns:repeat(4,1fr);margin:12px 16px;display:none;"></div>
-      <div style="overflow-x:auto;"><table class="lt" id="clientLedgerTable"><thead><tr><th>Date</th><th>Type</th><th>Stage</th><th>TM / Folder</th><th>Details</th><th>Due</th><th>Received</th><th>Receipt</th></tr></thead><tbody></tbody></table></div>
+      <div id="caseFilterBar" class="tb" style="padding:0 16px;display:none;">
+        <select class="fsel" id="ledgerCaseFilter" style="width:220px;" onchange="filterLedgerByCase()"><option value="">All cases</option></select>
+      </div>
+      <div style="overflow-x:auto;min-height:80px;">
+        <table class="lt" id="clientLedgerTable" style="width:100%;min-width:700px;">
+          <thead><tr><th>Date</th><th>Type</th><th>Stage</th><th>TM / Folder</th><th>Details</th><th>Due</th><th>Received</th><th>Actions</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
   </div>
 </main>
@@ -109,17 +174,17 @@
         <div class="fgroup"><label class="flbl">Client Code *</label><input class="fi" id="cCode" placeholder="A-001"></div>
         <div class="fgroup full"><label class="flbl">Client Name</label><input class="fi" id="cName"></div>
         <div class="fgroup"><label class="flbl">City</label><input class="fi" id="cCity"></div>
+        <div class="fgroup"><label class="flbl">Email</label><input class="fi" id="cEmail" type="email" placeholder="client@email.com"></div>
+        <div class="fgroup"><label class="flbl">Phone</label><input class="fi" id="cPhone" placeholder="03xx-xxxxxxx"></div>
         <div class="fgroup"><label class="flbl">Header Balance</label><input class="fi" id="cHeader" type="number" step="0.01" value="0"></div>
-        <div class="fgroup"><label class="flbl">Bank Name</label><input class="fi" id="cBank"></div>
-        <div class="fgroup"><label class="flbl">Account / IBAN</label><input class="fi" id="cIban"></div>
       </div>
       <div style="margin-top:16px;border-top:2px solid var(--black);padding-top:12px;">
         <div class="flbl" style="margin-bottom:8px;">Custom Stage Rates (PKR)</div>
         <div class="fg">
-          <div class="fgroup"><label class="flbl">S1</label><input class="fi" id="rS1" type="number" step="0.01" value="0"></div>
-          <div class="fgroup"><label class="flbl">S2</label><input class="fi" id="rS2" type="number" step="0.01" value="0"></div>
-          <div class="fgroup"><label class="flbl">S3</label><input class="fi" id="rS3" type="number" step="0.01" value="0"></div>
-          <div class="fgroup"><label class="flbl">S4</label><input class="fi" id="rS4" type="number" step="0.01" value="0"></div>
+          <div class="fgroup"><label class="flbl">Stage 1</label><input class="fi" id="rS1" type="number" step="0.01" value="0"></div>
+          <div class="fgroup"><label class="flbl">Stage 2</label><input class="fi" id="rS2" type="number" step="0.01" value="0"></div>
+          <div class="fgroup"><label class="flbl">Stage 3</label><input class="fi" id="rS3" type="number" step="0.01" value="0"></div>
+          <div class="fgroup"><label class="flbl">Stage 4</label><input class="fi" id="rS4" type="number" step="0.01" value="0"></div>
         </div>
       </div>
     </div>
@@ -133,10 +198,15 @@
     <div class="mb">
       <div class="fg">
         <div class="fgroup full"><label class="flbl">Client *</label><select class="fsel" id="chClient" onchange="onChargeClientChange()"></select></div>
-        <div class="fgroup"><label class="flbl">TM Number (optional S1)</label><input class="fi" id="chTM" placeholder="TM-123456 or 123456"></div>
+        <div class="fgroup"><label class="flbl">TM Number (optional Stage 1)</label><input class="fi" id="chTM" placeholder="TM or digits" onblur="autofillFromTM('ch')"></div>
         <div class="fgroup"><label class="flbl">Folder No</label><input class="fi" id="chFolder"></div>
         <div class="fgroup full"><label class="flbl">Application Name</label><input class="fi" id="chAppName" placeholder="Mark / application title"></div>
-        <div class="fgroup"><label class="flbl">Stage *</label><select class="fsel" id="chStage" onchange="applyStageRate()"><option value="S1">S1</option><option value="S2">S2</option><option value="S3">S3</option><option value="S4">S4</option></select></div>
+        <div class="fgroup"><label class="flbl">Stage *</label>
+          <select class="fsel" id="chStage" onchange="applyStageRate()">
+            <option value="S1">Stage 1</option><option value="S2">Stage 2</option>
+            <option value="S3">Stage 3</option><option value="S4">Stage 4</option>
+          </select>
+        </div>
         <div class="fgroup"><label class="flbl">Amount Due (PKR) *</label><input class="fi" id="chAmount" type="number" step="0.01"></div>
         <div class="fgroup full"><label class="flbl">Details</label><input class="fi" id="chDetails" placeholder="Stage fee"></div>
         <div class="fgroup"><label class="flbl">Date</label><input class="fi" id="chDate" type="date"></div>
@@ -152,16 +222,31 @@
     <div class="mb">
       <div class="fg">
         <div class="fgroup full"><label class="flbl">Client *</label><select class="fsel" id="rcClient"></select></div>
-        <div class="fgroup"><label class="flbl">TM Number (optional)</label><input class="fi" id="rcTM" placeholder="Allocate to case"></div>
-        <div class="fgroup"><label class="flbl">Stage (optional)</label><select class="fsel" id="rcStage"><option value="">General</option><option value="S1">S1</option><option value="S2">S2</option><option value="S3">S3</option><option value="S4">S4</option></select></div>
+        <div class="fgroup"><label class="flbl">TM Number</label><input class="fi" id="rcTM" placeholder="Allocate to case" onblur="autofillFromTM('rc')"></div>
+        <div class="fgroup"><label class="flbl">Stage</label>
+          <select class="fsel" id="rcStage">
+            <option value="">General</option>
+            <option value="S1">Stage 1</option><option value="S2">Stage 2</option>
+            <option value="S3">Stage 3</option><option value="S4">Stage 4</option>
+          </select>
+        </div>
         <div class="fgroup"><label class="flbl">Amount Received (PKR) *</label><input class="fi" id="rcAmount" type="number" step="0.01"></div>
-        <div class="fgroup"><label class="flbl">Payment Method</label><select class="fsel" id="rcMethod"><option>Cash</option><option>Bank Transfer</option><option>Online</option><option>Cheque</option></select></div>
-        <div class="fgroup"><label class="flbl">Date</label><input class="fi" id="rcDate" type="date"></div>
+        <div class="fgroup"><label class="flbl">Payment Method *</label>
+          <select class="fsel" id="rcMethod" onchange="onPaymentMethodChange()">
+            <option value="Cash">Cash</option>
+            <option value="Meezan Bank Limited">Meezan Bank Limited</option>
+            <option value="National Bank of Pakistan">National Bank of Pakistan</option>
+            <option value="Online">Online</option>
+            <option value="Cheque">Cheque</option>
+          </select>
+        </div>
+        <div class="fgroup" id="rcBankDateWrap" style="display:none;"><label class="flbl">Bank / Transfer Date</label><input class="fi" id="rcBankDate" type="date"></div>
+        <div class="fgroup"><label class="flbl">Entry Date</label><input class="fi" id="rcDate" type="date"></div>
         <div class="fgroup full"><label class="flbl">Link to charge (optional)</label><select class="fsel" id="rcLinkedCharge"><option value="">— None —</option></select></div>
         <div class="fgroup full"><label class="flbl">Notes</label><input class="fi" id="rcNotes"></div>
       </div>
     </div>
-    <div class="mf"><button class="btn" onclick="closeModal('modalReceiving')">Cancel</button><button class="btn ok" onclick="saveReceiving()">Save &amp; Print Receipt</button></div>
+    <div class="mf"><button class="btn" onclick="closeModal('modalReceiving')">Cancel</button><button class="btn ok" onclick="saveReceiving()">Save Payment</button></div>
   </div>
 </div>
 
@@ -176,13 +261,13 @@
         <div class="fgroup"><label class="flbl">Folder No</label><input class="fi" id="ecFolder"></div>
         <div class="fgroup full"><label class="flbl">Application Name</label><input class="fi" id="ecAppName"></div>
       </div>
-      <p style="font-family:DM Mono,monospace;font-size:10px;color:var(--muted);margin-top:10px;">After Acknowledgment: attach IPO TM to an S1 filing case.</p>
+      <p style="font-family:DM Mono,monospace;font-size:10px;color:var(--muted);margin-top:10px;">After Acknowledgment: attach IPO TM to a Stage 1 filing case.</p>
     </div>
     <div class="mf"><button class="btn" onclick="closeModal('modalEditCase')">Cancel</button><button class="btn prim" onclick="saveEditCase()">Save Case</button></div>
   </div>
 </div>
 
-<div id="receiptPrint" style="display:none;"></div>
+<div id="printArea"></div>
 <div class="toast" id="toast"></div>
 <script src="app.js"></script>
 <script src="gaps.js"></script>
