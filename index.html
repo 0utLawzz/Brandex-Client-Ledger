@@ -140,9 +140,11 @@
           <button class="btn ok sm" onclick="openReceivingModal(currentClientId)">+ Receiving</button>
           <button class="btn sm" onclick="toggleCurrentView()">Current View</button>
           <button class="btn sm" onclick="printLedger()">Print</button>
+          <button class="btn sm" onclick="openEditCaseModal()">Edit Case / TM</button>
           <button class="btn sm" onclick="showPage('clients')">← Back</button>
         </div>
       </div>
+      <div id="stageOutstanding" class="sg" style="grid-template-columns:repeat(4,1fr);margin:12px 16px;display:none;"></div>
       <div style="overflow-x:auto;">
         <table class="lt" id="clientLedgerTable">
           <thead><tr><th>Date</th><th>Type</th><th>Stage</th><th>TM / Folder</th><th>Details</th><th>Due</th><th>Received</th><th>Receipt</th></tr></thead>
@@ -190,8 +192,9 @@
     <div class="mb">
       <div class="fg">
         <div class="fgroup full"><label class="flbl">Client *</label><select class="fsel" id="chClient" onchange="onChargeClientChange()"></select></div>
-        <div class="fgroup"><label class="flbl">TM Number *</label><input class="fi" id="chTM" placeholder="TM-123456 or 123456"></div>
+        <div class="fgroup"><label class="flbl">TM Number (optional S1)</label><input class="fi" id="chTM" placeholder="TM-123456 or 123456"></div>
         <div class="fgroup"><label class="flbl">Folder No</label><input class="fi" id="chFolder"></div>
+        <div class="fgroup full"><label class="flbl">Application Name</label><input class="fi" id="chAppName" placeholder="Mark / application title"></div>
         <div class="fgroup"><label class="flbl">Stage *</label>
           <select class="fsel" id="chStage" onchange="applyStageRate()">
             <option value="S1">S1</option><option value="S2">S2</option>
@@ -231,12 +234,38 @@
           </select>
         </div>
         <div class="fgroup"><label class="flbl">Date</label><input class="fi" id="rcDate" type="date"></div>
+        <div class="fgroup full"><label class="flbl">Link to charge (optional)</label>
+          <select class="fsel" id="rcLinkedCharge"><option value="">— None —</option></select>
+        </div>
         <div class="fgroup full"><label class="flbl">Notes</label><input class="fi" id="rcNotes"></div>
       </div>
     </div>
     <div class="mf">
       <button class="btn" onclick="closeModal('modalReceiving')">Cancel</button>
       <button class="btn ok" onclick="saveReceiving()">Save &amp; Print Receipt</button>
+    </div>
+  </div>
+</div>
+
+<div class="mo" id="modalEditCase">
+  <div class="mbox">
+    <div class="mh"><div class="mt">EDIT CASE · TM / APPLICATION</div><button class="mc-btn" onclick="closeModal('modalEditCase')">×</button></div>
+    <div class="mb">
+      <input type="hidden" id="ecCaseId">
+      <div class="fg">
+        <div class="fgroup full">
+          <label class="flbl">Select case</label>
+          <select class="fsel" id="ecCaseSelect" onchange="onEditCaseSelect()"></select>
+        </div>
+        <div class="fgroup"><label class="flbl">TM Number</label><input class="fi" id="ecTM" placeholder="Fill when allotted"></div>
+        <div class="fgroup"><label class="flbl">Folder No</label><input class="fi" id="ecFolder"></div>
+        <div class="fgroup full"><label class="flbl">Application Name</label><input class="fi" id="ecAppName"></div>
+      </div>
+      <p style="font-family:DM Mono,monospace;font-size:10px;color:var(--muted);margin-top:10px;">Use after Acknowledgment to attach the IPO-allotted TM to an S1 filing case.</p>
+    </div>
+    <div class="mf">
+      <button class="btn" onclick="closeModal('modalEditCase')">Cancel</button>
+      <button class="btn prim" onclick="saveEditCase()">Save Case</button>
     </div>
   </div>
 </div>
