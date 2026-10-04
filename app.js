@@ -1,4 +1,3 @@
-
 // ============================================================
 // CONFIG — set your Supabase project keys
 // ============================================================
@@ -10,7 +9,6 @@ if (SUPABASE_URL && SUPABASE_ANON) {
   sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 }
 
-// In-memory fallback so the UI works even before Supabase is connected
 let mem = {
   series: [
     { id: 's1', code: 'A', name: 'A-Series', prefix: 'A-' },
@@ -40,6 +38,15 @@ function normalizeTM(tm) {
   if (!tm) return null;
   const d = String(tm).replace(/[^0-9]/g, '');
   return d || null;
+}
+async function lookupCaseByTM(tm) {
+  const tmNorm = normalizeTM(tm);
+  if (!tmNorm || !sb) return null;
+  const { data } = await sb.from('cases')
+    .select('id, tm_no, application_name, folder_no, client_id, clients(client_code, client_name)')
+    .eq('tm_no_normalized', tmNorm)
+    .maybeSingle();
+  return data;
 }
 function today() {
   return new Date().toISOString().slice(0, 10);
@@ -96,7 +103,7 @@ async function loadClients() {
 async function loadEntries() {
   if (sb) {
     const { data } = await sb.from('ledger_entries')
-      .select('*, clients(client_code, client_name), cases(tm_no, folder_no)')
+      .select('*, clients(client_code, client_name), cases(tm_no, folder_no, application_name)')
       .order('entry_date', { ascending: false })
       .order('created_at', { ascending: false });
     if (data) mem.entries = data;
@@ -123,7 +130,7 @@ async function loadDashboard() {
   tbody.innerHTML = '';
   mem.entries.slice(0, 12).forEach(e => {
     const code = e.clients?.client_code || '—';
-    const tm = e.cases?.tm_no || e.details || '—';
+    const tm = e.cases?.tm_no || e.cases?.application_name || e.details || '—';
     tbody.innerHTML += `<tr class="${e.entry_type}-row">
       <td class="date-cell">${e.entry_date || ''}</td>
       <td>${code}</td>
@@ -199,7 +206,7 @@ function renderClientEntries(rows) {
   let list = [...rows].sort((a, b) => (b.entry_date || '').localeCompare(a.entry_date || '') || (b.created_at || '').localeCompare(a.created_at || ''));
   if (currentViewMode) list = list.slice(0, 6);
   list.forEach(e => {
-    const tm = e.cases?.tm_no || e.cases?.folder_no || '—';
+    const tm = e.cases?.tm_no || e.cases?.folder_no || e.cases?.application_name || '—';
     tbody.innerHTML += `<tr class="${e.entry_type}-row">
       <td class="date-cell">${e.entry_date || ''}</td>
       <td>${e.entry_type}</td>
@@ -282,6 +289,7 @@ function openChargeModal(preClientId) {
   document.getElementById('chDate').value = today();
   onChargeClientChange();
   openModal('modalCharge');
+  bindTMLookup('chTM', 'chTMInfo');
 }
 function onChargeClientChange() { applyStageRate(); }
 function applyStageRate() {
@@ -296,23 +304,39 @@ async function saveCharge() {
   const tm = document.getElementById('chTM').value.trim();
   const stage = document.getElementById('chStage').value;
   const amount = Number(document.getElementById('chAmount').value);
-  if (!clientId || !tm || !amount) return toast('Client, TM and amount required');
+  if (!clientId || !amount) return toast('Client and amount required');
+  // TM required for S2–S4; Stage 1 (filing) may not have TM yet
+  if (stage !== 'S1' && !tm) return toast('TM number required for ' + stage + ' (allotted from Acknowledgment onward)');
+
   const tmNorm = normalizeTM(tm);
   let caseId = null;
+
   if (sb) {
-    let { data: existing } = await sb.from('cases').select('id').eq('tm_no_normalized', tmNorm).eq('client_id', clientId).maybeSingle();
-    if (existing) caseId = existing.id;
-    else {
+    if (tmNorm) {
+      let { data: existing } = await sb.from('cases').select('id, application_name, tm_no').eq('tm_no_normalized', tmNorm).eq('client_id', clientId).maybeSingle();
+      if (existing) caseId = existing.id;
+      else {
+        const { data: created, error } = await sb.from('cases').insert({
+          client_id: clientId, tm_no: tm, folder_no: document.getElementById('chFolder').value.trim() || null
+        }).select().single();
+        if (error) return toast(error.message);
+        caseId = created.id;
+      }
+    } else {
+      // Stage 1 pre-TM: placeholder case (folder only)
+      const folder = document.getElementById('chFolder').value.trim() || null;
       const { data: created, error } = await sb.from('cases').insert({
-        client_id: clientId, tm_no: tm, folder_no: document.getElementById('chFolder').value.trim() || null
+        client_id: clientId, tm_no: null, folder_no: folder
       }).select().single();
       if (error) return toast(error.message);
       caseId = created.id;
     }
     const { error: e2 } = await sb.from('ledger_entries').insert({
-      client_id: clientId, case_id: caseId,
+      client_id: clientId,
+      case_id: caseId,
       entry_date: document.getElementById('chDate').value || today(),
-      entry_type: 'charge', stage,
+      entry_type: 'charge',
+      stage,
       details: document.getElementById('chDetails').value.trim() || `Stage ${stage} fee`,
       amount_due: amount
     });
@@ -327,6 +351,33 @@ async function saveCharge() {
   if (currentClientId === clientId) openClientLedger(clientId);
 }
 
+function bindTMLookup(inputId, infoId) {
+  const el = document.getElementById(inputId);
+  if (!el || el.dataset.bound) return;
+  el.dataset.bound = '1';
+  el.addEventListener('blur', async () => {
+    const data = await lookupCaseByTM(el.value);
+    let info = document.getElementById(infoId);
+    if (!info) {
+      info = document.createElement('div');
+      info.id = infoId;
+      info.style.cssText = 'font-family:DM Mono,monospace;font-size:11px;margin-top:6px;padding:8px;border:2px solid var(--black);background:var(--bg-alt);';
+      el.parentElement.appendChild(info);
+    }
+    if (data) {
+      const name = data.application_name || '—';
+      const client = data.clients ? (data.clients.client_code + ' · ' + (data.clients.client_name || '')) : '—';
+      info.innerHTML = '<strong>MATCH</strong> · App: ' + name + ' · Client: ' + client + (data.folder_no ? ' · Folder: ' + data.folder_no : '');
+      info.style.borderColor = 'var(--accent2)';
+    } else if (el.value.trim()) {
+      info.textContent = 'No existing case for this TM — will create on save';
+      info.style.borderColor = 'var(--accent3)';
+    } else {
+      info.textContent = '';
+    }
+  });
+}
+
 function openReceivingModal(preClientId) {
   const sel = document.getElementById('rcClient');
   sel.innerHTML = mem.clients.map(c => `<option value="${c.id}">${c.client_code} — ${c.client_name || ''}</option>`).join('');
@@ -338,16 +389,19 @@ function openReceivingModal(preClientId) {
   document.getElementById('rcDate').value = today();
   document.getElementById('rcNotes').value = '';
   openModal('modalReceiving');
+  bindTMLookup('rcTM', 'rcTMInfo');
 }
 
 async function saveReceiving() {
   const clientId = document.getElementById('rcClient').value;
   const amount = Number(document.getElementById('rcAmount').value);
   if (!clientId || !amount) return toast('Client and amount required');
+
   const tm = document.getElementById('rcTM').value.trim();
   const stage = document.getElementById('rcStage').value || null;
   const receiptNo = 'R-' + Date.now().toString().slice(-8);
   let caseId = null;
+
   if (sb) {
     if (tm) {
       const tmNorm = normalizeTM(tm);
@@ -359,9 +413,11 @@ async function saveReceiving() {
       }
     }
     const row = {
-      client_id: clientId, case_id: caseId,
+      client_id: clientId,
+      case_id: caseId,
       entry_date: document.getElementById('rcDate').value || today(),
-      entry_type: 'receiving', stage,
+      entry_type: 'receiving',
+      stage,
       details: document.getElementById('rcNotes').value.trim() || 'Payment received',
       amount_received: amount,
       payment_method: document.getElementById('rcMethod').value,
