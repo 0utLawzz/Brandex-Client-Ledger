@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Brandex Law Associates — Client Ledger</title>
+<link rel="icon" type="image/png" href="assets/brandex-favicon-20261003.png">
+<link rel="apple-touch-icon" href="assets/brandex-logo-12.png">
+<meta property="og:image" content="assets/brandex-social-preview-20261003.png">
+<meta name="theme-color" content="#C94A00">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -20,22 +24,36 @@
   .ack-page:last-child { page-break-after: auto; }
 }
 #printArea { display:none; }
-.ack-sheet { font-family:'Space Grotesk',sans-serif; max-width:190mm; margin:0 auto; border:3px solid #0C0C0C; padding:18px 22px; background:#fff; color:#0C0C0C; }
-.ack-head { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #C94A00; padding-bottom:10px; margin-bottom:12px; }
-.ack-brand { font-family:'Bebas Neue',sans-serif; font-size:28px; letter-spacing:2px; }
+.ack-sheet { font-family:'Space Grotesk',sans-serif; max-width:190mm; margin:0 auto; border:3px solid #0C0C0C; padding:18px 22px; background:#FAF6EE; color:#0C0C0C; }
+.ack-head { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:4px solid #C94A00; padding-bottom:12px; margin-bottom:14px; }
+.ack-logo { width:56px; height:56px; object-fit:contain; margin-right:12px; }
+.ack-brand { font-family:'Bebas Neue',sans-serif; font-size:28px; letter-spacing:2px; color:#0C0C0C; }
 .ack-sub { font-family:'DM Mono',monospace; font-size:10px; color:#555; }
-.ack-copy { font-family:'DM Mono',monospace; font-size:10px; border:2px solid #0C0C0C; padding:4px 8px; }
-.ack-row { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px dashed #ccc; font-size:13px; }
-.ack-row.total { font-weight:700; font-size:16px; border-bottom:none; margin-top:8px; border-top:2px solid #0C0C0C; padding-top:8px; }
-.ack-banks { margin-top:14px; font-size:12px; border:2px solid #0C0C0C; padding:10px; background:#F0E8D0; }
+.ack-copy { font-family:'DM Mono',monospace; font-size:10px; border:2px solid #C94A00; background:#FFF1B8; color:#0C0C0C; padding:4px 10px; font-weight:700; }
+.ack-title { text-align:center; font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:2px; margin-bottom:12px; color:#C94A00; background:#FFF1B8; border:2px solid #0C0C0C; padding:6px 0; }
+.ack-row { display:flex; justify-content:space-between; padding:6px 8px; border-bottom:1px dashed #ccc; font-size:13px; }
+.ack-row:nth-child(even) { background:#F0E8D0; }
+.ack-row.total { font-weight:700; font-size:16px; border-bottom:none; margin-top:10px; border-top:3px solid #0C0C0C; padding-top:10px; background:#DDEFE8; color:#0A6B52; }
+.ack-banks { margin-top:14px; font-size:12px; border:2px solid #0C0C0C; padding:10px; background:#F0E8D0; border-left:6px solid #C94A00; }
 .series-banner { font-family:'Bebas Neue',sans-serif; font-size:42px; letter-spacing:3px; color:var(--accent); line-height:1; margin-bottom:4px; }
-.report-group { margin-bottom:18px; }
-.report-group h3 { font-family:'Bebas Neue',sans-serif; font-size:20px; border-left:6px solid var(--accent); padding-left:10px; margin-bottom:8px; }
+.report-group { margin-bottom:18px; border:2px solid var(--black); background:var(--panel); box-shadow:4px 4px 0 var(--black); padding:12px; }
+.report-group h3 { font-family:'Bebas Neue',sans-serif; font-size:20px; border-left:6px solid var(--accent); padding-left:10px; margin-bottom:8px; background:#FFF1B8; padding:6px 10px; }
+.stage-complete { display:inline-flex; align-items:center; gap:4px; background:#0D9970; color:#fff; border:2px solid #0C0C0C; padding:2px 8px; font-family:'DM Mono',monospace; font-size:9px; font-weight:700; letter-spacing:.5px; }
+.stage-complete::before { content:'✓'; font-weight:900; }
+.stage-card-s1 { background:#FFF5EB; border-color:#C94A00; }
+.stage-card-s2 { background:#E8F8F2; border-color:#0D9970; }
+.stage-card-s3 { background:#FFFBEB; border-color:#D4A800; }
+.stage-card-s4 { background:#F3EEFF; border-color:#7C3AED; }
+.stage-card-done { background:#DDEFE8 !important; border-color:#0A6B52 !important; box-shadow:5px 5px 0 #0A6B52 !important; }
+.stage-card-done .sc-val { color:#0A6B52 !important; }
 </style>
 </head>
 <body>
 <nav class="navbar">
-  <div class="nb-brand"><div><div class="nb-brand-text">BRANDEX</div><div class="nb-brand-sub">Client Ledger</div></div></div>
+  <div class="nb-brand">
+    <img src="assets/brandex-logo-15.png" alt="Brandex" class="nb-logo" width="40" height="40">
+    <div><div class="nb-brand-text">BRANDEX</div><div class="nb-brand-sub">Client Ledger</div></div>
+  </div>
   <div class="nb-nav">
     <div class="ni active" data-page="dashboard">Dashboard</div>
     <div class="ni" data-page="clients">Clients</div>

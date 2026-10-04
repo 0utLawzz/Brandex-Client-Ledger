@@ -128,7 +128,7 @@ async function loadDashboard() {
 
   const tbody = document.querySelector('#recentTable tbody');
   tbody.innerHTML = '';
-  mem.entries.slice(0, 12).forEach(e => {
+  mem.entries.slice(0, 10).forEach(e => {
     const code = e.clients?.client_code || '—';
     const tm = e.cases?.tm_no || e.cases?.application_name || e.details || '—';
     tbody.innerHTML += `<tr class="${e.entry_type}-row">

@@ -13,14 +13,17 @@ function buildAckHTML(entry, copyLabel) {
   return `
   <div class="ack-sheet ack-page">
     <div class="ack-head">
-      <div>
-        <div class="ack-brand">${BRAND_P.name}</div>
-        <div class="ack-sub">${BRAND_P.tagline || ''}</div>
-        <div class="ack-sub">${BRAND_P.email}</div>
+      <div style="display:flex;align-items:center;">
+        <img src="assets/brandex-logo-15.png" alt="Brandex" class="ack-logo" onerror="this.style.display='none'">
+        <div>
+          <div class="ack-brand">${BRAND_P.name}</div>
+          <div class="ack-sub">${BRAND_P.tagline || ''}</div>
+          <div class="ack-sub">${BRAND_P.email} · brandex.pk</div>
+        </div>
       </div>
       <div class="ack-copy">${copyLabel}</div>
     </div>
-    <div style="text-align:center;font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;margin-bottom:12px;">PAYMENT ACKNOWLEDGMENT</div>
+    <div class="ack-title">PAYMENT ACKNOWLEDGMENT</div>
     <div class="ack-row"><span>Receipt No</span><span>${entry.receipt_no || '—'}</span></div>
     <div class="ack-row"><span>Date</span><span>${entry.entry_date || ''}</span></div>
     <div class="ack-row"><span>Client</span><span>${client.client_code || ''} — ${client.client_name || ''}</span></div>
@@ -40,7 +43,7 @@ function buildAckHTML(entry, copyLabel) {
       <div>_________________<br>Received by</div>
       <div>_________________<br>Client / Bearer</div>
     </div>
-    <div style="margin-top:16px;text-align:center;font-family:'DM Mono',monospace;font-size:9px;color:#555;">Thank you · ${BRAND_P.name}</div>
+    <div style="margin-top:16px;text-align:center;font-family:'DM Mono',monospace;font-size:9px;color:#555;">Thank you · ${BRAND_P.name} · brandex.pk</div>
   </div>`;
 }
 

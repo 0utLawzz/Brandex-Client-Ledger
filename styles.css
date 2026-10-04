@@ -20,6 +20,7 @@ body{font-family:'Space Grotesk',Arial,sans-serif;background:var(--bg);color:var
 ::-webkit-scrollbar-thumb{background:var(--black);}
 .navbar{position:sticky;top:0;z-index:1000;height:var(--nav-h);background:var(--black);border-bottom:3px solid var(--accent);box-shadow:0 5px 0 rgba(0,0,0,.2);display:flex;align-items:center;justify-content:space-between;padding:0 24px;gap:12px;}
 .nb-brand{display:flex;align-items:center;gap:12px;}
+.nb-logo{width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);background:#FAF6EE;}
 .nb-brand-text{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:#FAF6EE;line-height:1.1;}
 .nb-brand-sub{font-family:'DM Mono',monospace;font-size:9px;color:#0D9970;letter-spacing:2px;text-transform:uppercase;margin-top:1px;}
 .nb-nav{display:flex;align-items:center;gap:0;flex:1;justify-content:center;}

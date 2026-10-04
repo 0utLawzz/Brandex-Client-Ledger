@@ -266,13 +266,22 @@ function renderStageOutstanding(rows) {
   const active = activeEntries(rows);
   let any = false;
   box.innerHTML = '';
+  const stageCardCls = { S1: 'stage-card-s1', S2: 'stage-card-s2', S3: 'stage-card-s3', S4: 'stage-card-s4' };
   ['S1','S2','S3','S4'].forEach(st => {
     let d = 0, r = 0;
     active.filter(e => e.stage === st).forEach(e => { d += Number(e.amount_due||0); r += Number(e.amount_received||0); });
     if (d || r) any = true;
     const out = Math.max(d - r, 0);
-    const cls = out > 0 ? 'y' : (r > 0 ? 'g' : 'b');
-    box.innerHTML += `<div class="sc ${cls}" style="padding:12px;"><div class="sc-lbl">${stageLabel(st)}</div><div class="sc-val" style="font-size:22px;">${fmt(out)}</div><div class="sc-sub">Due ${fmt(d)} · Rec ${fmt(r)}</div></div>`;
+    const isComplete = d > 0 && out === 0 && r > 0;
+    const extra = (stageCardCls[st] || '') + (isComplete ? ' stage-card-done' : '');
+    const statusHtml = isComplete
+      ? `<span class="stage-complete">COMPLETE</span>`
+      : (out > 0 ? `<span style="color:var(--accent);font-weight:700;">Outstanding</span>` : '—');
+    box.innerHTML += `<div class="sc ${extra}" style="padding:12px;">
+      <div class="sc-lbl">${stageLabel(st)} ${statusHtml}</div>
+      <div class="sc-val" style="font-size:22px;">${isComplete ? '✓ ' + fmt(r) : fmt(out)}</div>
+      <div class="sc-sub">Due ${fmt(d)} · Rec ${fmt(r)}</div>
+    </div>`;
   });
   box.style.display = any ? 'grid' : 'none';
 }
