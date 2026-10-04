@@ -12,12 +12,7 @@
 <body>
 
 <nav class="navbar">
-  <div class="nb-brand">
-    <div>
-      <div class="nb-brand-text">BRANDEX</div>
-      <div class="nb-brand-sub">Client Ledger</div>
-    </div>
-  </div>
+  <div class="nb-brand"><div><div class="nb-brand-text">BRANDEX</div><div class="nb-brand-sub">Client Ledger</div></div></div>
   <div class="nb-nav">
     <div class="ni active" data-page="dashboard">Dashboard</div>
     <div class="ni" data-page="clients">Clients</div>
@@ -31,12 +26,8 @@
 </nav>
 
 <main class="main">
-
   <div class="page active" id="page-dashboard">
-    <div class="ph">
-      <div class="ph-title">Dashboard</div>
-      <div class="ph-sub">Live payment &amp; case statistics</div>
-    </div>
+    <div class="ph"><div class="ph-title">Dashboard</div><div class="ph-sub">Live payment &amp; case statistics</div></div>
     <div class="sg">
       <div class="sc b"><div class="sc-lbl">Clients</div><div class="sc-val" id="statClients">0</div><div class="sc-sub">Active accounts</div></div>
       <div class="sc g"><div class="sc-lbl">Total Received</div><div class="sc-val" id="statReceived">0</div><div class="sc-sub">PKR</div></div>
@@ -50,84 +41,43 @@
     </div>
     <div class="ledger-page" style="margin-top:12px;">
       <div class="ledger-header" style="padding:12px 16px;"><strong style="font-family:'Bebas Neue';font-size:18px;">RECENT ACTIVITY</strong></div>
-      <div style="overflow-x:auto;">
-        <table class="lt" id="recentTable">
-          <thead><tr><th>Date</th><th>Client</th><th>Type</th><th>Stage</th><th>TM / Details</th><th>Due</th><th>Received</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
+      <div style="overflow-x:auto;"><table class="lt" id="recentTable"><thead><tr><th>Date</th><th>Client</th><th>Type</th><th>Stage</th><th>TM / Details</th><th>Due</th><th>Received</th></tr></thead><tbody></tbody></table></div>
     </div>
   </div>
 
   <div class="page" id="page-clients">
-    <div class="ph">
-      <div class="ph-title">Clients</div>
-      <div class="ph-sub">Multi-series accounts · Custom stage rates</div>
-    </div>
+    <div class="ph"><div class="ph-title">Clients</div><div class="ph-sub">Multi-series accounts · Custom stage rates</div></div>
     <div class="tb">
       <input class="srch" id="clientSearch" placeholder="Search code, name, city…" oninput="renderClients()">
-      <select class="fsel" id="seriesFilter" style="width:140px;" onchange="renderClients()">
-        <option value="">All Series</option>
-      </select>
+      <select class="fsel" id="seriesFilter" style="width:140px;" onchange="renderClients()"><option value="">All Series</option></select>
       <button class="btn prim" onclick="openClientModal()">+ New Client</button>
     </div>
     <div class="clients-grid" id="clientsGrid"></div>
   </div>
 
   <div class="page" id="page-actions">
-    <div class="ph">
-      <div class="ph-title">Actions</div>
-      <div class="ph-sub">Two modes · Add Record (TM) · Add Receiving</div>
-    </div>
+    <div class="ph"><div class="ph-title">Actions</div><div class="ph-sub">Two modes · Add Record (TM) · Add Receiving</div></div>
     <div class="sg" style="grid-template-columns:1fr 1fr;">
-      <div class="sc b" style="cursor:pointer;" onclick="openChargeModal()">
-        <div class="sc-lbl">Mode 1</div>
-        <div class="sc-val" style="font-size:26px;">ADD RECORD</div>
-        <div class="sc-sub">Charge a case by TM number · applies client stage rate</div>
-      </div>
-      <div class="sc g" style="cursor:pointer;" onclick="openReceivingModal()">
-        <div class="sc-lbl">Mode 2</div>
-        <div class="sc-val" style="font-size:26px;">ADD RECEIVING</div>
-        <div class="sc-sub">Record payment · allocate to case / stage · print receipt</div>
-      </div>
+      <div class="sc b" style="cursor:pointer;" onclick="openChargeModal()"><div class="sc-lbl">Mode 1</div><div class="sc-val" style="font-size:26px;">ADD RECORD</div><div class="sc-sub">Charge by TM · stage rate</div></div>
+      <div class="sc g" style="cursor:pointer;" onclick="openReceivingModal()"><div class="sc-lbl">Mode 2</div><div class="sc-val" style="font-size:26px;">ADD RECEIVING</div><div class="sc-sub">Payment · receipt</div></div>
     </div>
   </div>
 
   <div class="page" id="page-reports">
-    <div class="ph">
-      <div class="ph-title">Reports &amp; Export</div>
-      <div class="ph-sub">Filter · Group by stage · Selective · Full ledger</div>
-    </div>
+    <div class="ph"><div class="ph-title">Reports &amp; Export</div><div class="ph-sub">Filter · stage · export</div></div>
     <div class="tb">
-      <input class="srch" id="reportSearch" placeholder="Filter by TM, client, folder…">
-      <select class="fsel" id="reportStage" style="width:120px;">
-        <option value="">All Stages</option>
-        <option value="S1">S1</option><option value="S2">S2</option>
-        <option value="S3">S3</option><option value="S4">S4</option>
-      </select>
+      <input class="srch" id="reportSearch" placeholder="Filter by TM, client…">
+      <select class="fsel" id="reportStage" style="width:120px;"><option value="">All Stages</option><option value="S1">S1</option><option value="S2">S2</option><option value="S3">S3</option><option value="S4">S4</option></select>
       <button class="btn" onclick="runReport()">Apply</button>
       <button class="btn ok" onclick="exportCSV(false)">Export CSV</button>
       <button class="btn warn" onclick="exportCSV(true)">Export Selected</button>
       <button class="btn" onclick="exportImage()">Export Image</button>
     </div>
-    <div class="ledger-page" id="reportView">
-      <div style="overflow-x:auto;">
-        <table class="lt" id="reportTable">
-          <thead><tr>
-            <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"></th>
-            <th>Date</th><th>Client</th><th>Type</th><th>Stage</th><th>TM</th><th>Details</th><th>Due</th><th>Received</th>
-          </tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
+    <div class="ledger-page" id="reportView"><div style="overflow-x:auto;"><table class="lt" id="reportTable"><thead><tr><th><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"></th><th>Date</th><th>Client</th><th>Type</th><th>Stage</th><th>TM</th><th>Details</th><th>Due</th><th>Received</th></tr></thead><tbody></tbody></table></div></div>
   </div>
 
   <div class="page" id="page-ledger">
-    <div class="ph">
-      <div class="ph-title" id="ledgerTitle">Client Ledger</div>
-      <div class="ph-sub" id="ledgerSub">Full history · Current view = last + 5 previous</div>
-    </div>
+    <div class="ph"><div class="ph-title" id="ledgerTitle">Client Ledger</div><div class="ph-sub">Full history · Current view = last + 5 previous</div></div>
     <div class="ledger-page" id="clientLedgerBox">
       <div class="ledger-header">
         <div class="lh-3boxes">
@@ -145,15 +95,9 @@
         </div>
       </div>
       <div id="stageOutstanding" class="sg" style="grid-template-columns:repeat(4,1fr);margin:12px 16px;display:none;"></div>
-      <div style="overflow-x:auto;">
-        <table class="lt" id="clientLedgerTable">
-          <thead><tr><th>Date</th><th>Type</th><th>Stage</th><th>TM / Folder</th><th>Details</th><th>Due</th><th>Received</th><th>Receipt</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
+      <div style="overflow-x:auto;"><table class="lt" id="clientLedgerTable"><thead><tr><th>Date</th><th>Type</th><th>Stage</th><th>TM / Folder</th><th>Details</th><th>Due</th><th>Received</th><th>Receipt</th></tr></thead><tbody></tbody></table></div>
     </div>
   </div>
-
 </main>
 
 <div class="mo" id="modalClient">
@@ -179,10 +123,7 @@
         </div>
       </div>
     </div>
-    <div class="mf">
-      <button class="btn" onclick="closeModal('modalClient')">Cancel</button>
-      <button class="btn prim" onclick="saveClient()">Save Client</button>
-    </div>
+    <div class="mf"><button class="btn" onclick="closeModal('modalClient')">Cancel</button><button class="btn prim" onclick="saveClient()">Save Client</button></div>
   </div>
 </div>
 
@@ -195,21 +136,13 @@
         <div class="fgroup"><label class="flbl">TM Number (optional S1)</label><input class="fi" id="chTM" placeholder="TM-123456 or 123456"></div>
         <div class="fgroup"><label class="flbl">Folder No</label><input class="fi" id="chFolder"></div>
         <div class="fgroup full"><label class="flbl">Application Name</label><input class="fi" id="chAppName" placeholder="Mark / application title"></div>
-        <div class="fgroup"><label class="flbl">Stage *</label>
-          <select class="fsel" id="chStage" onchange="applyStageRate()">
-            <option value="S1">S1</option><option value="S2">S2</option>
-            <option value="S3">S3</option><option value="S4">S4</option>
-          </select>
-        </div>
+        <div class="fgroup"><label class="flbl">Stage *</label><select class="fsel" id="chStage" onchange="applyStageRate()"><option value="S1">S1</option><option value="S2">S2</option><option value="S3">S3</option><option value="S4">S4</option></select></div>
         <div class="fgroup"><label class="flbl">Amount Due (PKR) *</label><input class="fi" id="chAmount" type="number" step="0.01"></div>
-        <div class="fgroup full"><label class="flbl">Details</label><input class="fi" id="chDetails" placeholder="Stage fee / description"></div>
+        <div class="fgroup full"><label class="flbl">Details</label><input class="fi" id="chDetails" placeholder="Stage fee"></div>
         <div class="fgroup"><label class="flbl">Date</label><input class="fi" id="chDate" type="date"></div>
       </div>
     </div>
-    <div class="mf">
-      <button class="btn" onclick="closeModal('modalCharge')">Cancel</button>
-      <button class="btn prim" onclick="saveCharge()">Post Charge</button>
-    </div>
+    <div class="mf"><button class="btn" onclick="closeModal('modalCharge')">Cancel</button><button class="btn prim" onclick="saveCharge()">Post Charge</button></div>
   </div>
 </div>
 
@@ -220,30 +153,15 @@
       <div class="fg">
         <div class="fgroup full"><label class="flbl">Client *</label><select class="fsel" id="rcClient"></select></div>
         <div class="fgroup"><label class="flbl">TM Number (optional)</label><input class="fi" id="rcTM" placeholder="Allocate to case"></div>
-        <div class="fgroup"><label class="flbl">Stage (optional)</label>
-          <select class="fsel" id="rcStage">
-            <option value="">General</option>
-            <option value="S1">S1</option><option value="S2">S2</option>
-            <option value="S3">S3</option><option value="S4">S4</option>
-          </select>
-        </div>
+        <div class="fgroup"><label class="flbl">Stage (optional)</label><select class="fsel" id="rcStage"><option value="">General</option><option value="S1">S1</option><option value="S2">S2</option><option value="S3">S3</option><option value="S4">S4</option></select></div>
         <div class="fgroup"><label class="flbl">Amount Received (PKR) *</label><input class="fi" id="rcAmount" type="number" step="0.01"></div>
-        <div class="fgroup"><label class="flbl">Payment Method</label>
-          <select class="fsel" id="rcMethod">
-            <option>Cash</option><option>Bank Transfer</option><option>Online</option><option>Cheque</option>
-          </select>
-        </div>
+        <div class="fgroup"><label class="flbl">Payment Method</label><select class="fsel" id="rcMethod"><option>Cash</option><option>Bank Transfer</option><option>Online</option><option>Cheque</option></select></div>
         <div class="fgroup"><label class="flbl">Date</label><input class="fi" id="rcDate" type="date"></div>
-        <div class="fgroup full"><label class="flbl">Link to charge (optional)</label>
-          <select class="fsel" id="rcLinkedCharge"><option value="">— None —</option></select>
-        </div>
+        <div class="fgroup full"><label class="flbl">Link to charge (optional)</label><select class="fsel" id="rcLinkedCharge"><option value="">— None —</option></select></div>
         <div class="fgroup full"><label class="flbl">Notes</label><input class="fi" id="rcNotes"></div>
       </div>
     </div>
-    <div class="mf">
-      <button class="btn" onclick="closeModal('modalReceiving')">Cancel</button>
-      <button class="btn ok" onclick="saveReceiving()">Save &amp; Print Receipt</button>
-    </div>
+    <div class="mf"><button class="btn" onclick="closeModal('modalReceiving')">Cancel</button><button class="btn ok" onclick="saveReceiving()">Save &amp; Print Receipt</button></div>
   </div>
 </div>
 
@@ -253,26 +171,20 @@
     <div class="mb">
       <input type="hidden" id="ecCaseId">
       <div class="fg">
-        <div class="fgroup full">
-          <label class="flbl">Select case</label>
-          <select class="fsel" id="ecCaseSelect" onchange="onEditCaseSelect()"></select>
-        </div>
+        <div class="fgroup full"><label class="flbl">Select case</label><select class="fsel" id="ecCaseSelect" onchange="onEditCaseSelect()"></select></div>
         <div class="fgroup"><label class="flbl">TM Number</label><input class="fi" id="ecTM" placeholder="Fill when allotted"></div>
         <div class="fgroup"><label class="flbl">Folder No</label><input class="fi" id="ecFolder"></div>
         <div class="fgroup full"><label class="flbl">Application Name</label><input class="fi" id="ecAppName"></div>
       </div>
-      <p style="font-family:DM Mono,monospace;font-size:10px;color:var(--muted);margin-top:10px;">Use after Acknowledgment to attach the IPO-allotted TM to an S1 filing case.</p>
+      <p style="font-family:DM Mono,monospace;font-size:10px;color:var(--muted);margin-top:10px;">After Acknowledgment: attach IPO TM to an S1 filing case.</p>
     </div>
-    <div class="mf">
-      <button class="btn" onclick="closeModal('modalEditCase')">Cancel</button>
-      <button class="btn prim" onclick="saveEditCase()">Save Case</button>
-    </div>
+    <div class="mf"><button class="btn" onclick="closeModal('modalEditCase')">Cancel</button><button class="btn prim" onclick="saveEditCase()">Save Case</button></div>
   </div>
 </div>
 
 <div id="receiptPrint" style="display:none;"></div>
 <div class="toast" id="toast"></div>
-
 <script src="app.js"></script>
+<script src="gaps.js"></script>
 </body>
 </html>
