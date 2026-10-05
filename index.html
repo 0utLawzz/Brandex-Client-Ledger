@@ -14,13 +14,16 @@
 <style>
 @page { size: A4; margin: 12mm; }
 @media print {
-  .navbar,.tb,.lh-actions,.no-print,.ni,.nb-stats,.nb-nav { display:none!important; }
+  .navbar,.tb,.lh-actions,.no-print,.ni,.nb-stats,.nb-nav,.main,.page,.mo,.toast { display:none!important; }
   body { background:#fff!important; margin:0; }
-  .main { padding:0!important; max-width:none!important; }
-  .page { display:none!important; }
-  .page.active, #printArea, #printArea * { display:block!important; visibility:visible!important; }
-  #printArea { display:block!important; }
-  .ledger-page { box-shadow:none!important; border:1px solid #000; }
+  #printArea { display:block!important; visibility:visible!important; position:static!important; width:100%!important; }
+  #printArea table { display:table!important; width:100%!important; border-collapse:collapse!important; }
+  #printArea thead { display:table-header-group!important; }
+  #printArea tbody { display:table-row-group!important; }
+  #printArea tr { display:table-row!important; }
+  #printArea th, #printArea td { display:table-cell!important; }
+  #printArea img { display:inline-block!important; }
+  #printArea .ack-head, #printArea .print-head, #printArea .ack-row { display:flex!important; }
   .ack-page { page-break-after: always; }
   .ack-page:last-child { page-break-after: auto; }
 }
@@ -39,6 +42,13 @@
 .series-banner { font-family:'Bebas Neue',sans-serif; font-size:42px; letter-spacing:3px; color:var(--accent); line-height:1; margin-bottom:4px; }
 .report-group { margin-bottom:18px; }
 .report-group h3 { font-family:'Bebas Neue',sans-serif; font-size:20px; border-left:6px solid var(--accent); padding-left:10px; margin-bottom:8px; }
+.ack-title { text-align:center; font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:2px; margin:12px 0; }
+.print-table { width:100%; border-collapse:collapse; font-size:11px; }
+.print-table th { background:#0C0C0C; color:#FAF6EE; padding:6px 8px; text-align:left; font-family:'DM Mono',monospace; font-size:9px; text-transform:uppercase; border:1px solid #0C0C0C; }
+.print-table td { padding:5px 8px; border-bottom:1px solid #ccc; vertical-align:top; }
+.print-table .amt { text-align:right; font-family:'DM Mono',monospace; }
+.print-brand { font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:2px; color:#C94A00; }
+.print-sub { font-family:'DM Mono',monospace; font-size:10px; color:#555; }
 </style>
 </head>
 <body>
