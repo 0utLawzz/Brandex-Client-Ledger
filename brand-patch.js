@@ -1,4 +1,4 @@
-// Brandex brand-patch v4 — edit client, TM rules, forward stages, dark-orange print
+// Brandex brand-patch v6 — edit client, TM rules, forward stages, small logo print
 (function () {
   var A = window.BRANDEX_ASSETS || {};
   var STAGE_ORDER = { S1: 1, S2: 2, S3: 3, S4: 4 };
@@ -301,7 +301,7 @@
   else { applyChrome(); wirePrintCurrent(); }
   setTimeout(wirePrintCurrent, 600);
 
-  // Print CSS — dark orange (#8B3A00) replaces black; brand card; pills/groups
+  // Print CSS — small logo top + aligned 2-col banks
   (function () {
     var old = document.getElementById('bx-print-fix');
     if (old) old.remove();
@@ -321,19 +321,22 @@
       '#printArea tr{display:table-row!important;}' +
       '#printArea th,#printArea td{display:table-cell!important;color:' + D + '!important;}' +
       '#printArea img{display:inline-block!important;}' +
-      '#printArea .ack-head,#printArea .print-head,#printArea .ack-row,#printArea .print-flex,#printArea .print-signs{display:flex!important;}' +
+      '#printArea .ack-head,#printArea .print-head,#printArea .ack-row,#printArea .print-flex,#printArea .print-signs,#printArea .print-head-row{display:flex!important;}' +
       '.ack-page{page-break-after:always;}.ack-page:last-child{page-break-after:auto;}' +
       '}' +
       '#printArea{display:none;}' +
       '.ack-sheet{border:3px solid ' + D + '!important;color:' + D + '!important;}' +
-      '.print-card-wrap{text-align:center;margin-bottom:14px;border-bottom:3px solid ' + O + ';padding-bottom:12px;}' +
-      '.print-card-img{max-width:100%;height:auto;max-height:110px;object-fit:contain;}' +
-      '.print-card-fallback{display:none;}' +
-      '.print-subtitle{font-family:Bebas Neue,sans-serif;font-size:18px;letter-spacing:2px;color:' + O + ';margin-top:8px;}' +
-      '.print-group{margin:14px 0;padding:10px 0;border-bottom:1px dashed #e0c4a8;}' +
+      '.print-card-wrap{margin-bottom:10px;border-bottom:2px solid ' + O + ';padding-bottom:8px;}' +
+      '.print-logo-sm{width:36px;height:36px;border-radius:50%;border:2px solid ' + D + ';object-fit:cover;flex-shrink:0;}' +
+      '.print-head-row{display:flex;align-items:center;gap:10px;}' +
+      '.print-head-text{text-align:left;}' +
+      '.print-brand{font-family:Bebas Neue,sans-serif;font-size:20px!important;letter-spacing:1px;color:' + O + ';line-height:1.1;}' +
+      '.print-sub{font-family:DM Mono,monospace;font-size:9px;color:#6b4423;}' +
+      '.print-subtitle{font-family:Bebas Neue,sans-serif;font-size:16px;letter-spacing:2px;color:' + O + ';margin-top:6px;text-align:center;}' +
+      '.print-group{margin:12px 0;padding:8px 0;border-bottom:1px dashed #e0c4a8;}' +
       '.print-group-title{font-family:DM Mono,monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:' + O + ';margin-bottom:6px;font-weight:700;}' +
-      '.print-big{font-family:Bebas Neue,sans-serif;font-size:28px;letter-spacing:1px;color:' + D + ';line-height:1.1;}' +
-      '.print-big-sub{font-size:15px;font-weight:700;color:' + D + ';margin-top:2px;}' +
+      '.print-big{font-family:Bebas Neue,sans-serif;font-size:26px;letter-spacing:1px;color:' + D + ';line-height:1.1;}' +
+      '.print-big-sub{font-size:14px;font-weight:700;color:' + D + ';margin-top:2px;}' +
       '.print-meta{font-family:DM Mono,monospace;font-size:11px;color:#6b4423;margin-top:4px;}' +
       '.print-pills{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0;}' +
       '.print-pill{display:inline-block;padding:4px 10px;border:2px solid ' + D + ';font-family:DM Mono,monospace;font-size:11px;font-weight:700;background:#FFF4E6;color:' + D + ';}' +
@@ -343,19 +346,23 @@
       '.ack-copy{background:' + O + '!important;color:#fff!important;border:2px solid ' + D + ';padding:4px 10px;font-family:DM Mono,monospace;font-size:10px;}' +
       '.ack-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed #e0c4a8;font-size:13px;color:' + D + ';}' +
       '.ack-row.total{font-weight:700;font-size:16px;border-bottom:none;margin-top:8px;border-top:2px solid ' + O + ';padding-top:8px;color:' + O + ';}' +
-      '.ack-banks{margin-top:14px;font-size:12px;border:2px solid ' + G + ';padding:10px;background:#E6F7F1;color:' + D + ';}' +
+      '.ack-banks{margin-top:12px;font-size:11px;border:2px solid ' + G + ';padding:10px;background:#E6F7F1;color:' + D + ';}' +
+      '.pay-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}' +
+      '.pay-acct{border:1px solid #c5e6d9;padding:6px 8px;background:#fff;}' +
+      '.pay-name{font-weight:700;font-size:11px;margin-bottom:4px;color:' + O + ';}' +
+      '.pay-line{display:flex;gap:6px;font-size:10px;line-height:1.4;}' +
+      '.pay-lbl{min-width:42px;color:#6b4423;font-family:DM Mono,monospace;}' +
+      '.pay-val{font-weight:600;word-break:break-all;}' +
       '.print-signs{margin-top:28px;display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:11px;color:' + D + ';}' +
       '.print-thanks{margin-top:16px;text-align:center;font-family:DM Mono,monospace;font-size:9px;color:#6b4423;}' +
       '.print-table{width:100%;border-collapse:collapse;font-size:11px;color:' + D + ';}' +
       '.print-table th{background:' + D + '!important;color:#FAF6EE!important;padding:6px 8px;text-align:left;font-family:DM Mono,monospace;font-size:9px;text-transform:uppercase;border:1px solid ' + D + ';}' +
       '.print-table td{padding:5px 8px;border-bottom:1px solid #e0c4a8;vertical-align:top;color:' + D + ';}' +
       '.print-table .amt{text-align:right;font-family:DM Mono,monospace;font-weight:700;}' +
-      '.print-brand{font-family:Bebas Neue,sans-serif;font-size:26px;letter-spacing:2px;color:' + O + ';}' +
-      '.print-sub{font-family:DM Mono,monospace;font-size:10px;color:#6b4423;}' +
       '.report-divider{border-top:3px solid ' + O + ';margin:18px 0 10px;padding-top:8px;}' +
       '.cc-edit{font-size:10px!important;}';
     document.head.appendChild(s);
   })();
 
-  console.log('Brandex brand-patch v4 loaded (dark-orange print)');
+  console.log('Brandex brand-patch v6 loaded (small logo + banks)');
 })();
