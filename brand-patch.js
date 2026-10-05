@@ -1,23 +1,17 @@
-// Brand + stage UX patch (after gaps.js + gaps-print.js)
+// Brandex brand-patch — client view, print, recent 10, stage complete
 (function () {
   var A = window.BRANDEX_ASSETS || {};
 
-  // Favicon + nav logo
   function applyChrome() {
     var link = document.querySelector('link[rel="icon"]');
-    if (!link) {
-      link = document.createElement('link');
-      link.rel = 'icon';
-      document.head.appendChild(link);
-    }
-    link.href = A.favicon || 'assets/favicon.png';
-
+    if (link && (A.favicon || true)) link.href = A.favicon || 'assets/brandex-favicon-20261003.png';
     var brand = document.querySelector('.nb-brand');
     if (brand && !brand.querySelector('.nb-logo')) {
       var img = document.createElement('img');
       img.className = 'nb-logo';
       img.alt = 'Brandex';
-      img.src = A.logoMark || 'assets/logo-mark.png';
+      img.width = 40; img.height = 40;
+      img.src = A.logoMark || 'assets/brandex-logo-15.png';
       brand.insertBefore(img, brand.firstChild);
     }
   }
@@ -52,82 +46,7 @@
     };
   }
 
-  // Stage outstanding: complete marker + colors
-  if (typeof renderStageOutstanding === 'function') {
-    var _rso = renderStageOutstanding;
-    renderStageOutstanding = function (rows) {
-      var box = document.getElementById('stageOutstanding');
-      if (!box) return _rso(rows);
-      var active = (typeof activeEntries === 'function') ? activeEntries(rows) : (rows || []);
-      var any = false;
-      box.innerHTML = '';
-      ['S1', 'S2', 'S3', 'S4'].forEach(function (st) {
-        var d = 0, r = 0;
-        active.filter(function (e) { return e.stage === st; }).forEach(function (e) {
-          d += Number(e.amount_due || 0);
-          r += Number(e.amount_received || 0);
-        });
-        if (d || r) any = true;
-        var out = Math.max(d - r, 0);
-        var done = d > 0 && out === 0;
-        var cls = done ? 'g complete' : (out > 0 ? 'y' : (r > 0 ? 'g' : 'b'));
-        var label = (typeof stageLabel === 'function') ? stageLabel(st) : st;
-        var status = done
-          ? '<span class="stage-complete">COMPLETE</span>'
-          : '<div class="sc-sub">Due ' + fmt(d) + ' · Rec ' + fmt(r) + '</div>';
-        box.innerHTML += '<div class="sc ' + cls + '" style="padding:12px;">' +
-          '<div class="sc-lbl">' + label + '</div>' +
-          '<div class="sc-val" style="font-size:22px;">' + (done ? '✓' : fmt(out)) + '</div>' +
-          status + '</div>';
-      });
-      box.style.display = any ? 'grid' : 'none';
-    };
-  }
-
-  // Richer ack branding
-  if (typeof buildAckHTML === 'function') {
-    var _bah = buildAckHTML;
-    buildAckHTML = function (entry, copyLabel) {
-      var logo = (window.BRANDEX_ASSETS && (BRANDEX_ASSETS.logoMark || BRANDEX_ASSETS.favicon)) || 'assets/brandex-logo-15.png';
-      var client = entry.clients || (mem.clients || []).find(function (c) { return c.id === entry.client_id; }) || {};
-      var tm = (entry.cases && entry.cases.tm_no) || '—';
-      var app = (entry.cases && entry.cases.application_name) || '—';
-      var stageTxt = (typeof stageLabel === 'function') ? stageLabel(entry.stage) : (entry.stage || 'General');
-      return '<div class="ack-sheet ack-page">' +
-        '<div class="ack-head" style="border-bottom:3px solid #C94A00;">' +
-        '<div style="display:flex;gap:12px;align-items:center;">' +
-        '<img class="ack-logo" src="' + logo + '" alt="Brandex">' +
-        '<div><div class="ack-brand" style="color:#C94A00;">' + (A.name || 'Brandex Law Associates') + '</div>' +
-        '<div class="ack-sub">' + (A.tagline || 'TRADEMARK REGISTRY') + '</div>' +
-        '<div class="ack-sub">' + (A.web || 'BRANDEX.PK') + ' · ' + (A.email || '') + '</div></div></div>' +
-        '<div class="ack-copy" style="background:#C94A00;color:#fff;border-color:#0C0C0C;">' + copyLabel + '</div></div>' +
-        '<div style="text-align:center;font-family:Bebas Neue,sans-serif;font-size:22px;letter-spacing:2px;margin:12px 0;color:#0C0C0C;">PAYMENT ACKNOWLEDGMENT</div>' +
-        '<div class="ack-row"><span>Receipt No</span><span>' + (entry.receipt_no || '—') + '</span></div>' +
-        '<div class="ack-row"><span>Date</span><span>' + (entry.entry_date || '') + '</span></div>' +
-        '<div class="ack-row"><span>Client</span><span>' + (client.client_code || '') + ' — ' + (client.client_name || '') + '</span></div>' +
-        '<div class="ack-row"><span>Phone</span><span>' + (client.phone || '—') + '</span></div>' +
-        '<div class="ack-row"><span>Email</span><span>' + (client.email || '—') + '</span></div>' +
-        '<div class="ack-row"><span>TM Number</span><span>' + tm + '</span></div>' +
-        '<div class="ack-row"><span>Application</span><span>' + app + '</span></div>' +
-        '<div class="ack-row"><span>Stage</span><span>' + stageTxt + '</span></div>' +
-        '<div class="ack-row"><span>Method</span><span>' + (entry.payment_method || '—') + '</span></div>' +
-        '<div class="ack-row"><span>Details</span><span>' + (entry.details || '') + '</span></div>' +
-        '<div class="ack-row total" style="color:#C94A00;"><span>Amount Received</span><span>PKR ' + fmt(entry.amount_received) + '</span></div>' +
-        '<div class="ack-banks" style="border-color:#C94A00;background:#FFF0E6;"><strong style="color:#C94A00;">Bank payment details</strong><br>' +
-        'Meezan Bank Limited — use account details on invoice<br>National Bank of Pakistan — use account details on invoice</div>' +
-        '<div style="margin-top:28px;display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:11px;">' +
-        '<div>_________________<br>Received by</div><div>_________________<br>Client / Bearer</div></div>' +
-        '<div style="margin-top:16px;text-align:center;font-family:DM Mono,monospace;font-size:9px;color:#555;">Thank you · ' + (A.name || 'Brandex') + ' · ' + (A.web || '') + '</div></div>';
-    };
-  }
-
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyChrome);
-  else applyChrome();
-  console.log('Brandex brand-patch loaded');
-})();
-
-// Client view fix — null-safe openClientLedger (lhCode/lhName/lhBal may be absent)
-(function () {
+  // Null-safe client ledger view (fixes crash on missing lhCode/lhName/lhBal)
   openClientLedger = async function (clientId) {
     currentClientId = clientId;
     currentViewMode = false;
@@ -184,5 +103,23 @@
       sel.innerHTML += '<option value="' + k + '">' + cases[k] + '</option>';
     });
   };
-  console.log('Brandex client-view fix loaded');
+
+  // Print CSS: only #printArea (hide live UI so preview is not double)
+  if (!document.getElementById('bx-print-fix')) {
+    var s = document.createElement('style');
+    s.id = 'bx-print-fix';
+    s.textContent = '@media print{' +
+      '.navbar,.tb,.lh-actions,.no-print,.ni,.nb-stats,.nb-nav,.main,.page{display:none!important;}' +
+      'body{background:#fff!important;margin:0;}' +
+      '#printArea,#printArea *{display:block!important;visibility:visible!important;}' +
+      '#printArea{display:block!important;position:static!important;}' +
+      '.ack-page{page-break-after:always;}.ack-page:last-child{page-break-after:auto;}' +
+      '}' +
+      '.ack-title{text-align:center;font-family:Bebas Neue,sans-serif;font-size:22px;letter-spacing:2px;margin:12px 0;}';
+    document.head.appendChild(s);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyChrome);
+  else applyChrome();
+  console.log('Brandex brand-patch loaded (client+print fixes)');
 })();
