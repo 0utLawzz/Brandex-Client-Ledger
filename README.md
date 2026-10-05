@@ -5,6 +5,8 @@
 ![Vercel](https://img.shields.io/badge/Deploy-Vercel-000000?logo=vercel)
 ![Status](https://img.shields.io/badge/Status-Foundation-blue)
 
+**Production:** https://brandex-client-ledger.vercel.app
+
 **Source of truth for client stage payments** at Brandex Law Associates.  
 Designed to feed `stageX_paid` / `stageX_paid_date` / `payment_reference` into [Brandex-Database-CMS](https://github.com/0utLawzz/Brandex-Database-CMS).
 
