@@ -1,49 +1,77 @@
-// --- Acknowledgment + A4 ledger/report prints (branded tables) ---
+// --- Brandex prints: brand card header, dark-orange theme, grouped layout ---
 const STAGE_LABEL_P = { S1: 'Stage 1', S2: 'Stage 2', S3: 'Stage 3', S4: 'Stage 4' };
 function stageLabelP(s) { return (typeof stageLabel === 'function' ? stageLabel(s) : (STAGE_LABEL_P[s] || s || '—')); }
 const BRAND_P = (typeof BRAND !== 'undefined') ? BRAND : {
-  name: 'Brandex Law Associates', email: 'info@brandex.pk', tagline: 'Intellectual Property · Trademarks',
+  name: 'Brandex Law Associates', email: 'info@brandex.pk', tagline: 'TRADEMARK REGISTRY',
   banks: [{ name: 'Meezan Bank Limited', note: 'Use account details on invoice' }, { name: 'National Bank of Pakistan', note: 'Use account details on invoice' }]
 };
+const PRINT_CARD = 'assets/brandex-social-preview-20261003.png';
+const DARK_ORANGE = '#8B3A00';
+const THEME_GREEN = '#0D9970';
+const ACCENT_ORANGE = '#C94A00';
+
+function printBrandHeader(subtitle) {
+  return `<div class="print-card-wrap">
+    <img src="${PRINT_CARD}" alt="Brandex Law Associates" class="print-card-img" onerror="this.style.display='none'">
+    <div class="print-card-fallback">
+      <div class="print-brand">${BRAND_P.name}</div>
+      <div class="print-sub" style="color:${ACCENT_ORANGE};font-weight:700;">${BRAND_P.tagline || 'TRADEMARK REGISTRY'}</div>
+      <div class="print-sub">${BRAND_P.email} · brandex.pk</div>
+    </div>
+    ${subtitle ? `<div class="print-subtitle">${subtitle}</div>` : ''}
+  </div>`;
+}
+
+function stagePill(stage) {
+  const label = stageLabelP(stage) || 'General';
+  return `<span class="print-pill">${label}</span>`;
+}
+function tmPill(tm) {
+  if (!tm || tm === '—') return '<span class="print-pill muted">No TM</span>';
+  return `<span class="print-pill tm">TM ${tm}</span>`;
+}
 
 function buildAckHTML(entry, copyLabel) {
-  const client = entry.clients || mem.clients.find(c => c.id === entry.client_id) || {};
+  const client = entry.clients || (mem.clients || []).find(c => c.id === entry.client_id) || {};
   const tm = entry.cases?.tm_no || '—';
   const app = entry.cases?.application_name || '—';
+  const series = client.series?.code || '';
   return `
   <div class="ack-sheet ack-page">
-    <div class="ack-head">
-      <div style="display:flex;align-items:center;gap:12px;">
-        <img src="assets/brandex-logo-15.png" alt="Brandex" class="ack-logo" style="width:48px;height:48px;border-radius:50%;border:2px solid #0C0C0C;" onerror="this.style.display='none'">
-        <div>
-          <div class="ack-brand" style="color:#C94A00;">${BRAND_P.name}</div>
-          <div class="ack-sub">${BRAND_P.tagline || ''}</div>
-          <div class="ack-sub">${BRAND_P.email} · brandex.pk</div>
-        </div>
-      </div>
-      <div class="ack-copy" style="background:#C94A00;color:#fff;">${copyLabel}</div>
+    ${printBrandHeader('PAYMENT ACKNOWLEDGMENT')}
+    <div class="ack-copy-bar"><span class="ack-copy">${copyLabel}</span></div>
+
+    <div class="print-group">
+      <div class="print-group-title">CLIENT</div>
+      <div class="print-big">${series ? series + ' · ' : ''}${client.client_code || '—'}</div>
+      <div class="print-big-sub">${client.client_name || '—'}</div>
+      <div class="print-meta">${client.phone || '—'} · ${client.email || '—'} · ${client.city || '—'}</div>
     </div>
-    <div class="ack-title">PAYMENT ACKNOWLEDGMENT</div>
-    <div class="ack-row"><span>Receipt No</span><span>${entry.receipt_no || '—'}</span></div>
-    <div class="ack-row"><span>Date</span><span>${entry.entry_date || ''}</span></div>
-    <div class="ack-row"><span>Client</span><span>${client.client_code || ''} — ${client.client_name || ''}</span></div>
-    <div class="ack-row"><span>Phone</span><span>${client.phone || '—'}</span></div>
-    <div class="ack-row"><span>Email</span><span>${client.email || '—'}</span></div>
-    <div class="ack-row"><span>TM Number</span><span>${tm}</span></div>
-    <div class="ack-row"><span>Application</span><span>${app}</span></div>
-    <div class="ack-row"><span>Stage</span><span>${stageLabelP(entry.stage) || 'General'}</span></div>
-    <div class="ack-row"><span>Method</span><span>${entry.payment_method || '—'}</span></div>
-    <div class="ack-row"><span>Details</span><span>${entry.details || ''}</span></div>
-    <div class="ack-row total" style="color:#C94A00;"><span>Amount Received</span><span>PKR ${fmt(entry.amount_received)}</span></div>
-    <div class="ack-banks" style="border-color:#C94A00;background:#FFF0E6;">
-      <strong style="color:#C94A00;">Bank payment details</strong><br>
+
+    <div class="print-group">
+      <div class="print-group-title">CASE / TM</div>
+      <div class="print-pills">${tmPill(tm)} ${stagePill(entry.stage)}</div>
+      <div class="print-meta"><strong>Application:</strong> ${app}</div>
+    </div>
+
+    <div class="print-group">
+      <div class="print-group-title">PAYMENT</div>
+      <div class="ack-row"><span>Receipt No</span><span><strong>${entry.receipt_no || '—'}</strong></span></div>
+      <div class="ack-row"><span>Date</span><span>${entry.entry_date || ''}</span></div>
+      <div class="ack-row"><span>Method</span><span>${entry.payment_method || '—'}</span></div>
+      <div class="ack-row"><span>Details</span><span>${entry.details || ''}</span></div>
+      <div class="ack-row total"><span>Amount Received</span><span>PKR ${fmt(entry.amount_received)}</span></div>
+    </div>
+
+    <div class="ack-banks">
+      <strong>Bank payment details</strong><br>
       ${(BRAND_P.banks || []).map(b => b.name + (b.note ? ' — ' + b.note : '')).join('<br>')}
     </div>
-    <div style="margin-top:28px;display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:11px;">
+    <div class="print-signs">
       <div>_________________<br>Received by</div>
       <div>_________________<br>Client / Bearer</div>
     </div>
-    <div style="margin-top:16px;text-align:center;font-family:'DM Mono',monospace;font-size:9px;color:#555;">Thank you · ${BRAND_P.name}</div>
+    <div class="print-thanks">Thank you · ${BRAND_P.name} · brandex.pk</div>
   </div>`;
 }
 
@@ -70,36 +98,49 @@ function printLedgerA4() {
   const caseId = document.getElementById('ledgerCaseFilter')?.value;
   if (caseId) rows = rows.filter(e => e.cases?.id === caseId);
   rows = (typeof activeEntries === 'function') ? activeEntries(rows) : rows.filter(e => !e.voided_at);
-  const logo = 'assets/brandex-logo-15.png';
-  let body = `<div class="ack-sheet">
-    <div class="print-head ack-head">
-      <div style="display:flex;gap:12px;align-items:center;">
-        <img src="${logo}" alt="Brandex" class="ack-logo" style="width:48px;height:48px;border-radius:50%;border:2px solid #0C0C0C;" onerror="this.style.display='none'">
-        <div>
-          <div class="print-brand">${BRAND_P.name}</div>
-          <div class="print-sub">${BRAND_P.email} · Client Ledger · A4</div>
-        </div>
-      </div>
-    </div>
-    <div style="font-family:Bebas Neue,sans-serif;font-size:22px;margin:8px 0;">${c.client_code || ''} — ${c.client_name || ''}</div>
-    <div class="print-sub" style="margin-bottom:12px;">Phone: ${c.phone || '—'} · Email: ${c.email || '—'} · City: ${c.city || '—'}</div>
-    <table class="print-table">
-      <thead><tr>
-        <th>Date</th><th>Type</th><th>Stage</th><th>TM</th><th>Details</th><th style="text-align:right;">Due</th><th style="text-align:right;">Rec</th>
-      </tr></thead><tbody>`;
+  const series = c.series?.code || (mem.series || []).find(s => s.id === c.series_id)?.code || '';
+
+  const byTm = {};
   rows.forEach(e => {
-    body += `<tr>
-      <td>${e.entry_date || ''}</td>
-      <td>${e.entry_type || ''}</td>
-      <td>${stageLabelP(e.stage)}</td>
-      <td>${e.cases?.tm_no || '—'}</td>
-      <td>${e.details || ''}${e.payment_method ? ' · ' + e.payment_method : ''}</td>
-      <td class="amt">${e.amount_due ? fmt(e.amount_due) : ''}</td>
-      <td class="amt">${e.amount_received ? fmt(e.amount_received) : ''}</td>
-    </tr>`;
+    const key = e.cases?.tm_no || e.cases?.application_name || e.cases?.folder_no || 'General / No TM';
+    if (!byTm[key]) byTm[key] = [];
+    byTm[key].push(e);
   });
-  if (!rows.length) body += '<tr><td colspan="7" style="text-align:center;color:#555;">No entries</td></tr>';
-  body += '</tbody></table></div>';
+
+  let body = `<div class="ack-sheet">
+    ${printBrandHeader('CLIENT LEDGER · A4')}
+    <div class="print-group">
+      <div class="print-group-title">CLIENT</div>
+      <div class="print-big">${series ? series + ' · ' : ''}${c.client_code || '—'}</div>
+      <div class="print-big-sub">${c.client_name || '—'}</div>
+      <div class="print-meta">Phone: ${c.phone || '—'} · Email: ${c.email || '—'} · City: ${c.city || '—'}</div>
+    </div>`;
+
+  Object.keys(byTm).sort().forEach(tmKey => {
+    const list = byTm[tmKey];
+    const stageSet = [...new Set(list.map(e => e.stage).filter(Boolean))];
+    body += `<div class="print-group">
+      <div class="print-group-title">CASE / PAYMENT</div>
+      <div class="print-pills">${tmPill(tmKey === 'General / No TM' ? null : tmKey)} ${stageSet.map(stagePill).join(' ')}</div>
+      <table class="print-table">
+        <thead><tr>
+          <th>Date</th><th>Type</th><th>Stage</th><th>Details</th><th style="text-align:right;">Due</th><th style="text-align:right;">Rec</th>
+        </tr></thead><tbody>`;
+    list.forEach(e => {
+      body += `<tr>
+        <td>${e.entry_date || ''}</td>
+        <td>${e.entry_type || ''}</td>
+        <td>${stagePill(e.stage)}</td>
+        <td>${e.details || ''}${e.payment_method ? ' · ' + e.payment_method : ''}</td>
+        <td class="amt">${e.amount_due ? fmt(e.amount_due) : ''}</td>
+        <td class="amt">${e.amount_received ? fmt(e.amount_received) : ''}</td>
+      </tr>`;
+    });
+    body += '</tbody></table></div>';
+  });
+  if (!rows.length) body += '<div class="print-meta" style="text-align:center;">No entries</div>';
+  body += '</div>';
+
   const area = document.getElementById('printArea');
   area.innerHTML = body;
   area.style.display = 'block';
@@ -132,38 +173,30 @@ runReport = function() {
   if (typeof selectedRows !== 'undefined') selectedRows.clear();
   const wrap = document.getElementById('reportOutput') || document.getElementById('reportContent');
   if (!wrap) return toast('Report panel missing');
-  if (group === 'flat') {
-    wrap.innerHTML = `<table class="lt" id="reportTable" style="width:100%;min-width:700px;">
-      <thead><tr>
-        <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"></th>
-        <th>Date</th><th>Client</th><th>Type</th><th>Stage</th><th>TM</th><th>Details</th><th>Due</th><th>Received</th>
-      </tr></thead><tbody></tbody></table>`;
-    const tbody = wrap.querySelector('tbody');
-    list.forEach(e => { tbody.innerHTML += reportRowHTML(e); });
-    if (!list.length) tbody.innerHTML = '<tr><td colspan="9" class="empty">No rows</td></tr>';
-  } else {
-    const groups = {};
-    list.forEach(e => {
-      let key = '—';
-      if (group === 'client') key = (e.clients?.client_code || '—') + ' — ' + (e.clients?.client_name || '');
-      else if (group === 'case') key = (e.cases?.tm_no || e.cases?.application_name || e.cases?.folder_no || 'No TM / case');
-      else if (group === 'stage') key = stageLabelP(e.stage) || 'General';
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(e);
-    });
-    let html = '';
-    Object.keys(groups).sort().forEach(k => {
-      html += `<div class="report-group"><h3>${k} <span style="font-size:12px;color:var(--muted);">(${groups[k].length})</span>
-        <label style="font-size:11px;margin-left:8px;"><input type="checkbox" onchange="toggleGroupChecks(this)"> all</label></h3>
-        <table class="lt" style="width:100%;min-width:640px;"><thead><tr>
-          <th></th><th>Date</th><th>Client</th><th>Type</th><th>Stage</th><th>TM</th><th>Details</th><th>Due</th><th>Received</th>
-        </tr></thead><tbody>`;
-      groups[k].forEach(e => { html += reportRowHTML(e); });
-      html += '</tbody></table></div>';
-    });
-    if (!Object.keys(groups).length) html = '<div class="empty">No rows match filters</div>';
-    wrap.innerHTML = html;
-  }
+
+  const groups = {};
+  list.forEach(e => {
+    let key = '—';
+    if (group === 'client') key = (e.clients?.client_code || '—') + ' — ' + (e.clients?.client_name || '');
+    else if (group === 'case') key = (e.cases?.tm_no || e.cases?.application_name || e.cases?.folder_no || 'No TM / case');
+    else if (group === 'stage') key = stageLabelP(e.stage) || 'General';
+    else key = 'All';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(e);
+  });
+  let html = '';
+  Object.keys(groups).sort().forEach(k => {
+    html += `<div class="report-group report-divider">
+      <h3><strong>${k}</strong> <span style="font-size:12px;color:var(--muted);">(${groups[k].length})</span>
+      <label style="font-size:11px;margin-left:8px;"><input type="checkbox" onchange="toggleGroupChecks(this)"> all</label></h3>
+      <table class="lt" style="width:100%;min-width:640px;"><thead><tr>
+        <th></th><th>Date</th><th>Client</th><th>Type</th><th>Stage</th><th>TM</th><th>Details</th><th>Due</th><th>Received</th>
+      </tr></thead><tbody>`;
+    groups[k].forEach(e => { html += reportRowHTML(e); });
+    html += '</tbody></table></div>';
+  });
+  if (!Object.keys(groups).length) html = '<div class="empty">No rows match filters</div>';
+  wrap.innerHTML = html;
   toast(list.length + ' row(s)');
 };
 
@@ -174,10 +207,10 @@ function reportRowHTML(e) {
   return `<tr class="${e.entry_type}-row" data-id="${e.id}">
     <td><input type="checkbox" class="row-check" value="${e.id}" onchange="toggleRow('${e.id}',this.checked)"></td>
     <td class="date-cell">${e.entry_date || ''}</td>
-    <td>${code}</td>
+    <td><strong>${code}</strong></td>
     <td>${e.entry_type}</td>
     <td>${badge}</td>
-    <td>${tm}</td>
+    <td><strong>${tm}</strong></td>
     <td>${e.details || ''}${e.payment_method ? ' · ' + e.payment_method : ''}</td>
     <td class="amt-due">${e.amount_due ? fmt(e.amount_due) : ''}</td>
     <td class="amt-rec">${e.amount_received ? fmt(e.amount_received) : ''}</td>
@@ -207,35 +240,40 @@ function printReportA4() {
 }
 
 function printEntriesA4(list, title) {
-  const logo = 'assets/brandex-logo-15.png';
-  let body = `<div class="ack-sheet">
-    <div class="print-head ack-head">
-      <div style="display:flex;gap:12px;align-items:center;">
-        <img src="${logo}" alt="Brandex" class="ack-logo" style="width:48px;height:48px;border-radius:50%;border:2px solid #0C0C0C;" onerror="this.style.display='none'">
-        <div>
-          <div class="print-brand">${BRAND_P.name}</div>
-          <div class="print-sub">${BRAND_P.email} · Ledger export · A4</div>
-        </div>
-      </div>
-    </div>
-    <table class="print-table">
-      <thead><tr>
-        <th>Date</th><th>Client</th><th>Type</th><th>Stage</th><th>TM</th><th>Details</th><th style="text-align:right;">Due</th><th style="text-align:right;">Rec</th>
-      </tr></thead><tbody>`;
+  const byClient = {};
   (list || []).forEach(e => {
-    body += `<tr>
-      <td>${e.entry_date || ''}</td>
-      <td>${e.clients?.client_code || '—'}</td>
-      <td>${e.entry_type || ''}</td>
-      <td>${stageLabelP(e.stage)}</td>
-      <td>${e.cases?.tm_no || '—'}</td>
-      <td>${e.details || ''}</td>
-      <td class="amt">${e.amount_due ? fmt(e.amount_due) : ''}</td>
-      <td class="amt">${e.amount_received ? fmt(e.amount_received) : ''}</td>
-    </tr>`;
+    const ck = (e.clients?.client_code || '—') + ' — ' + (e.clients?.client_name || '');
+    if (!byClient[ck]) byClient[ck] = {};
+    const tk = e.cases?.tm_no || e.cases?.application_name || 'General';
+    if (!byClient[ck][tk]) byClient[ck][tk] = [];
+    byClient[ck][tk].push(e);
   });
-  if (!(list || []).length) body += '<tr><td colspan="8" style="text-align:center;color:#555;">No rows</td></tr>';
-  body += '</tbody></table></div>';
+
+  let body = `<div class="ack-sheet">${printBrandHeader('LEDGER EXPORT · A4')}`;
+  Object.keys(byClient).sort().forEach(ck => {
+    body += `<div class="print-group"><div class="print-group-title">CLIENT</div><div class="print-big">${ck}</div>`;
+    Object.keys(byClient[ck]).sort().forEach(tk => {
+      const rows = byClient[ck][tk];
+      const stages = [...new Set(rows.map(e => e.stage).filter(Boolean))];
+      body += `<div class="print-pills" style="margin:8px 0;">${tmPill(tk === 'General' ? null : tk)} ${stages.map(stagePill).join(' ')}</div>
+        <table class="print-table"><thead><tr>
+          <th>Date</th><th>Type</th><th>Stage</th><th>Details</th><th style="text-align:right;">Due</th><th style="text-align:right;">Rec</th>
+        </tr></thead><tbody>`;
+      rows.forEach(e => {
+        body += `<tr>
+          <td>${e.entry_date || ''}</td><td>${e.entry_type || ''}</td><td>${stagePill(e.stage)}</td>
+          <td>${e.details || ''}</td>
+          <td class="amt">${e.amount_due ? fmt(e.amount_due) : ''}</td>
+          <td class="amt">${e.amount_received ? fmt(e.amount_received) : ''}</td>
+        </tr>`;
+      });
+      body += '</tbody></table>';
+    });
+    body += '</div>';
+  });
+  if (!(list || []).length) body += '<div class="print-meta" style="text-align:center;">No rows</div>';
+  body += '</div>';
+
   const area = document.getElementById('printArea');
   area.innerHTML = body;
   area.style.display = 'block';
@@ -243,4 +281,4 @@ function printEntriesA4(list, title) {
   setTimeout(() => { window.print(); area.style.display = 'none'; area.innerHTML = ''; document.title = 'Brandex Law Associates — Client Ledger'; }, 200);
 }
 
-console.log('Brandex gaps-print loaded');
+console.log('Brandex gaps-print v4 loaded (brand card + dark orange)');
