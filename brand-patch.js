@@ -1,10 +1,10 @@
-// Brandex brand-patch — client view, print, recent 10, stage complete
+// Brandex brand-patch — client view, print tables, recent 10
 (function () {
   var A = window.BRANDEX_ASSETS || {};
 
   function applyChrome() {
     var link = document.querySelector('link[rel="icon"]');
-    if (link && (A.favicon || true)) link.href = A.favicon || 'assets/brandex-favicon-20261003.png';
+    if (link) link.href = A.favicon || 'assets/brandex-favicon-20261003.png';
     var brand = document.querySelector('.nb-brand');
     if (brand && !brand.querySelector('.nb-logo')) {
       var img = document.createElement('img');
@@ -16,7 +16,6 @@
     }
   }
 
-  // Recent activity: 10 rows
   if (typeof loadDashboard === 'function') {
     var _ld = loadDashboard;
     loadDashboard = async function () {
@@ -46,7 +45,6 @@
     };
   }
 
-  // Null-safe client ledger view (fixes crash on missing lhCode/lhName/lhBal)
   openClientLedger = async function (clientId) {
     currentClientId = clientId;
     currentViewMode = false;
@@ -104,22 +102,38 @@
     });
   };
 
-  // Print CSS: only #printArea (hide live UI so preview is not double)
-  if (!document.getElementById('bx-print-fix')) {
+  // Print CSS — critical: tables stay tables (never force * to display:block)
+  (function () {
+    var old = document.getElementById('bx-print-fix');
+    if (old) old.remove();
     var s = document.createElement('style');
     s.id = 'bx-print-fix';
-    s.textContent = '@media print{' +
-      '.navbar,.tb,.lh-actions,.no-print,.ni,.nb-stats,.nb-nav,.main,.page{display:none!important;}' +
+    s.textContent =
+      '@media print{' +
+      '.navbar,.tb,.lh-actions,.no-print,.ni,.nb-stats,.nb-nav,.main,.page,.mo,.toast{display:none!important;}' +
       'body{background:#fff!important;margin:0;}' +
-      '#printArea,#printArea *{display:block!important;visibility:visible!important;}' +
-      '#printArea{display:block!important;position:static!important;}' +
+      '#printArea{display:block!important;visibility:visible!important;position:static!important;width:100%!important;}' +
+      '#printArea table{display:table!important;width:100%!important;border-collapse:collapse!important;}' +
+      '#printArea thead{display:table-header-group!important;}' +
+      '#printArea tbody{display:table-row-group!important;}' +
+      '#printArea tr{display:table-row!important;}' +
+      '#printArea th,#printArea td{display:table-cell!important;}' +
+      '#printArea img{display:inline-block!important;}' +
+      '#printArea .ack-head,#printArea .print-head,#printArea .ack-row,#printArea .print-flex{display:flex!important;}' +
       '.ack-page{page-break-after:always;}.ack-page:last-child{page-break-after:auto;}' +
       '}' +
-      '.ack-title{text-align:center;font-family:Bebas Neue,sans-serif;font-size:22px;letter-spacing:2px;margin:12px 0;}';
+      '#printArea{display:none;}' +
+      '.ack-title{text-align:center;font-family:Bebas Neue,sans-serif;font-size:22px;letter-spacing:2px;margin:12px 0;}' +
+      '.print-table{width:100%;border-collapse:collapse;font-size:11px;}' +
+      '.print-table th{background:#0C0C0C;color:#FAF6EE;padding:6px 8px;text-align:left;font-family:DM Mono,monospace;font-size:9px;text-transform:uppercase;border:1px solid #0C0C0C;}' +
+      '.print-table td{padding:5px 8px;border-bottom:1px solid #ccc;vertical-align:top;}' +
+      '.print-table .amt{text-align:right;font-family:DM Mono,monospace;}' +
+      '.print-brand{font-family:Bebas Neue,sans-serif;font-size:26px;letter-spacing:2px;color:#C94A00;}' +
+      '.print-sub{font-family:DM Mono,monospace;font-size:10px;color:#555;}';
     document.head.appendChild(s);
-  }
+  })();
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyChrome);
   else applyChrome();
-  console.log('Brandex brand-patch loaded (client+print fixes)');
+  console.log('Brandex brand-patch loaded (client+print-table fixes)');
 })();
