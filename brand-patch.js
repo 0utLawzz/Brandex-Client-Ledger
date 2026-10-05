@@ -1,4 +1,4 @@
-// Brandex brand-patch v3 — edit client, TM rules, forward stages, green print, no stage boxes
+// Brandex brand-patch v4 — edit client, TM rules, forward stages, dark-orange print
 (function () {
   var A = window.BRANDEX_ASSETS || {};
   var STAGE_ORDER = { S1: 1, S2: 2, S3: 3, S4: 4 };
@@ -15,7 +15,6 @@
     }
   }
 
-  // Hide stage outstanding boxes (not the desired UX)
   var box = document.getElementById('stageOutstanding');
   if (box) { box.style.display = 'none'; box.innerHTML = ''; }
   if (typeof renderStageOutstanding === 'function') {
@@ -25,7 +24,6 @@
     };
   }
 
-  // --- Recent 10 ---
   if (typeof loadDashboard === 'function') {
     var _ld = loadDashboard;
     loadDashboard = async function () {
@@ -52,7 +50,6 @@
     };
   }
 
-  // --- Edit client ---
   window._editClientId = null;
   openClientModal = function (clientId) {
     window._editClientId = clientId || null;
@@ -135,7 +132,6 @@
     loadDashboard();
   };
 
-  // Client cards: edit button + bold key info
   if (typeof renderClients === 'function') {
     var _rc = renderClients;
     renderClients = function () {
@@ -152,16 +148,12 @@
         edit.className = 'btn sm cc-edit';
         edit.textContent = 'Edit';
         edit.style.cssText = 'margin-top:8px;width:100%;';
-        edit.onclick = function (ev) {
-          ev.stopPropagation();
-          openClientModal(id);
-        };
+        edit.onclick = function (ev) { ev.stopPropagation(); openClientModal(id); };
         card.appendChild(edit);
       });
     };
   }
 
-  // --- Client ledger: bold TM / amounts, no stage boxes ---
   openClientLedger = async function (clientId) {
     currentClientId = clientId;
     currentViewMode = false;
@@ -203,7 +195,6 @@
     showPage('ledger');
   };
 
-  // Bold TM + amounts in ledger rows
   if (typeof renderClientEntries === 'function') {
     var _rce = renderClientEntries;
     renderClientEntries = function (rows) {
@@ -219,7 +210,6 @@
     };
   }
 
-  // --- TM uniqueness (global) + stage forward-only on saveCharge ---
   if (typeof saveCharge === 'function') {
     var _sc = saveCharge;
     saveCharge = async function () {
@@ -230,10 +220,7 @@
       if (!clientId || !amount) return toast('Client and amount required');
       if (stage !== 'S1' && !tm) return toast('TM required for ' + (typeof stageLabel === 'function' ? stageLabel(stage) : stage));
       if (!sb) return toast('Supabase required');
-
       var tmNorm = typeof normalizeTM === 'function' ? normalizeTM(tm) : (tm ? String(tm).replace(/[^0-9]/g, '') : null);
-
-      // Global TM uniqueness: if TM exists on another client, block
       if (tmNorm) {
         var q = await sb.from('cases').select('id, client_id, tm_no, clients(client_code, client_name)').eq('tm_no_normalized', tmNorm).maybeSingle();
         if (q.data && q.data.client_id !== clientId) {
@@ -241,8 +228,6 @@
           return toast('TM ' + tm + ' already belongs to ' + owner + '. Cannot add to this ledger.');
         }
       }
-
-      // Stage forward-only for this TM/case
       if (tmNorm && stage) {
         var caseRows = await sb.from('cases').select('id').eq('tm_no_normalized', tmNorm).eq('client_id', clientId).maybeSingle();
         if (caseRows.data) {
@@ -258,12 +243,10 @@
           }
         }
       }
-
       return _sc();
     };
   }
 
-  // Block receiving against foreign TM
   if (typeof saveReceiving === 'function') {
     var _sr = saveReceiving;
     saveReceiving = async function () {
@@ -283,7 +266,6 @@
     };
   }
 
-  // Current View + Print Current
   toggleCurrentView = function () {
     currentViewMode = !currentViewMode;
     toast(currentViewMode ? 'Current view: last 6 entries' : 'Full ledger');
@@ -319,45 +301,61 @@
   else { applyChrome(); wirePrintCurrent(); }
   setTimeout(wirePrintCurrent, 600);
 
-  // Print CSS — hard green theme (#0D9970) instead of black
+  // Print CSS — dark orange (#8B3A00) replaces black; brand card; pills/groups
   (function () {
     var old = document.getElementById('bx-print-fix');
     if (old) old.remove();
     var s = document.createElement('style');
     s.id = 'bx-print-fix';
+    var D = '#8B3A00';
     var G = '#0D9970';
+    var O = '#C94A00';
     s.textContent =
       '@media print{' +
       '.navbar,.tb,.lh-actions,.no-print,.ni,.nb-stats,.nb-nav,.main,.page,.mo,.toast{display:none!important;}' +
-      'body{background:#fff!important;margin:0;}' +
-      '#printArea{display:block!important;visibility:visible!important;position:static!important;width:100%!important;}' +
+      'body{background:#fff!important;margin:0;color:' + D + '!important;}' +
+      '#printArea{display:block!important;visibility:visible!important;position:static!important;width:100%!important;color:' + D + '!important;}' +
       '#printArea table{display:table!important;width:100%!important;border-collapse:collapse!important;}' +
       '#printArea thead{display:table-header-group!important;}' +
       '#printArea tbody{display:table-row-group!important;}' +
       '#printArea tr{display:table-row!important;}' +
-      '#printArea th,#printArea td{display:table-cell!important;}' +
+      '#printArea th,#printArea td{display:table-cell!important;color:' + D + '!important;}' +
       '#printArea img{display:inline-block!important;}' +
-      '#printArea .ack-head,#printArea .print-head,#printArea .ack-row,#printArea .print-flex{display:flex!important;}' +
+      '#printArea .ack-head,#printArea .print-head,#printArea .ack-row,#printArea .print-flex,#printArea .print-signs{display:flex!important;}' +
       '.ack-page{page-break-after:always;}.ack-page:last-child{page-break-after:auto;}' +
       '}' +
       '#printArea{display:none;}' +
-      '.ack-sheet{border:3px solid ' + G + '!important;}' +
-      '.ack-head,.print-head{border-bottom:3px solid ' + G + '!important;}' +
-      '.ack-brand,.print-brand{color:' + G + '!important;}' +
-      '.ack-copy{background:' + G + '!important;color:#fff!important;border-color:' + G + '!important;}' +
-      '.ack-row.total{border-top:2px solid ' + G + '!important;color:' + G + '!important;}' +
-      '.ack-banks{border-color:' + G + '!important;background:#E6F7F1!important;}' +
-      '.ack-title{text-align:center;font-family:Bebas Neue,sans-serif;font-size:22px;letter-spacing:2px;margin:12px 0;color:' + G + ';}' +
-      '.print-table{width:100%;border-collapse:collapse;font-size:11px;}' +
-      '.print-table th{background:' + G + '!important;color:#FAF6EE!important;padding:6px 8px;text-align:left;font-family:DM Mono,monospace;font-size:9px;text-transform:uppercase;border:1px solid ' + G + ';}' +
-      '.print-table td{padding:5px 8px;border-bottom:1px solid #c5e6d9;vertical-align:top;}' +
+      '.ack-sheet{border:3px solid ' + D + '!important;color:' + D + '!important;}' +
+      '.print-card-wrap{text-align:center;margin-bottom:14px;border-bottom:3px solid ' + O + ';padding-bottom:12px;}' +
+      '.print-card-img{max-width:100%;height:auto;max-height:110px;object-fit:contain;}' +
+      '.print-card-fallback{display:none;}' +
+      '.print-subtitle{font-family:Bebas Neue,sans-serif;font-size:18px;letter-spacing:2px;color:' + O + ';margin-top:8px;}' +
+      '.print-group{margin:14px 0;padding:10px 0;border-bottom:1px dashed #e0c4a8;}' +
+      '.print-group-title{font-family:DM Mono,monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:' + O + ';margin-bottom:6px;font-weight:700;}' +
+      '.print-big{font-family:Bebas Neue,sans-serif;font-size:28px;letter-spacing:1px;color:' + D + ';line-height:1.1;}' +
+      '.print-big-sub{font-size:15px;font-weight:700;color:' + D + ';margin-top:2px;}' +
+      '.print-meta{font-family:DM Mono,monospace;font-size:11px;color:#6b4423;margin-top:4px;}' +
+      '.print-pills{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0;}' +
+      '.print-pill{display:inline-block;padding:4px 10px;border:2px solid ' + D + ';font-family:DM Mono,monospace;font-size:11px;font-weight:700;background:#FFF4E6;color:' + D + ';}' +
+      '.print-pill.tm{background:#E6F7F1;border-color:' + G + ';color:' + G + ';}' +
+      '.print-pill.muted{opacity:.6;}' +
+      '.ack-copy-bar{text-align:right;margin-bottom:8px;}' +
+      '.ack-copy{background:' + O + '!important;color:#fff!important;border:2px solid ' + D + ';padding:4px 10px;font-family:DM Mono,monospace;font-size:10px;}' +
+      '.ack-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed #e0c4a8;font-size:13px;color:' + D + ';}' +
+      '.ack-row.total{font-weight:700;font-size:16px;border-bottom:none;margin-top:8px;border-top:2px solid ' + O + ';padding-top:8px;color:' + O + ';}' +
+      '.ack-banks{margin-top:14px;font-size:12px;border:2px solid ' + G + ';padding:10px;background:#E6F7F1;color:' + D + ';}' +
+      '.print-signs{margin-top:28px;display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:11px;color:' + D + ';}' +
+      '.print-thanks{margin-top:16px;text-align:center;font-family:DM Mono,monospace;font-size:9px;color:#6b4423;}' +
+      '.print-table{width:100%;border-collapse:collapse;font-size:11px;color:' + D + ';}' +
+      '.print-table th{background:' + D + '!important;color:#FAF6EE!important;padding:6px 8px;text-align:left;font-family:DM Mono,monospace;font-size:9px;text-transform:uppercase;border:1px solid ' + D + ';}' +
+      '.print-table td{padding:5px 8px;border-bottom:1px solid #e0c4a8;vertical-align:top;color:' + D + ';}' +
       '.print-table .amt{text-align:right;font-family:DM Mono,monospace;font-weight:700;}' +
-      '.print-brand{font-family:Bebas Neue,sans-serif;font-size:26px;letter-spacing:2px;color:' + G + ';}' +
-      '.print-sub{font-family:DM Mono,monospace;font-size:10px;color:#555;}' +
-      '.report-divider{border-top:3px solid ' + G + ';margin:18px 0 10px;padding-top:8px;}' +
+      '.print-brand{font-family:Bebas Neue,sans-serif;font-size:26px;letter-spacing:2px;color:' + O + ';}' +
+      '.print-sub{font-family:DM Mono,monospace;font-size:10px;color:#6b4423;}' +
+      '.report-divider{border-top:3px solid ' + O + ';margin:18px 0 10px;padding-top:8px;}' +
       '.cc-edit{font-size:10px!important;}';
     document.head.appendChild(s);
   })();
 
-  console.log('Brandex brand-patch v3 loaded');
+  console.log('Brandex brand-patch v4 loaded (dark-orange print)');
 })();
