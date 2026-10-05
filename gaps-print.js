@@ -1,4 +1,4 @@
-// --- Brandex prints v5: brand card, dark-orange, full payment accounts ---
+// --- Brandex prints v6: small top logo, aligned bank accounts ---
 const STAGE_LABEL_P = { S1: 'Stage 1', S2: 'Stage 2', S3: 'Stage 3', S4: 'Stage 4' };
 function stageLabelP(s) { return (typeof stageLabel === 'function' ? stageLabel(s) : (STAGE_LABEL_P[s] || s || '—')); }
 const BRAND_P = (typeof BRAND !== 'undefined') ? BRAND : {
@@ -19,15 +19,15 @@ const ACCENT_ORANGE = '#C94A00';
 
 function printBrandHeader(subtitle) {
   const logo = 'assets/brandex-logo-15.png';
+  // Small logo on top only — does not cover content area
   return `<div class="print-card-wrap">
-    <img src="${PRINT_CARD}" alt="Brandex Law Associates" class="print-card-img" onerror="this.style.display='none'">
-    <div class="print-card-fallback">
-      <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:6px;">
-        <img src="${logo}" alt="" style="width:44px;height:44px;border-radius:50%;border:2px solid #8B3A00;" onerror="this.style.display='none'">
+    <div class="print-head-row">
+      <img src="${logo}" alt="Brandex" class="print-logo-sm" onerror="this.style.display='none'">
+      <div class="print-head-text">
         <div class="print-brand">${BRAND_P.name}</div>
+        <div class="print-sub" style="color:${ACCENT_ORANGE};font-weight:700;">${BRAND_P.tagline || 'TRADEMARK REGISTRY'}</div>
+        <div class="print-sub">${BRAND_P.email} · brandex.pk</div>
       </div>
-      <div class="print-sub" style="color:${ACCENT_ORANGE};font-weight:700;">${BRAND_P.tagline || 'TRADEMARK REGISTRY'}</div>
-      <div class="print-sub">${BRAND_P.email} · brandex.pk</div>
     </div>
     ${subtitle ? `<div class="print-subtitle">${subtitle}</div>` : ''}
   </div>`;
@@ -45,18 +45,30 @@ function tmPill(tm) {
 function paymentAccountsHTML() {
   const banks = BRAND_P.banks || [];
   const online = BRAND_P.online || [];
-  let h = '<div class="ack-banks"><div class="print-group-title" style="margin-bottom:8px;">BANK ACCOUNTS</div>';
+  let h = '<div class="ack-banks">';
+  h += '<div class="print-group-title" style="margin-bottom:8px;">BANK ACCOUNTS</div>';
+  h += '<div class="pay-grid">';
   banks.forEach(b => {
-    h += `<div class="pay-acct"><strong>${b.name}</strong><br>
-      Title: ${b.title || '—'} · AC#: ${b.account || '—'}<br>
-      IBAN: ${b.iban || '—'}</div>`;
+    h += `<div class="pay-acct">
+      <div class="pay-name">${b.name}</div>
+      <div class="pay-line"><span class="pay-lbl">Title</span><span class="pay-val">${b.title || '—'}</span></div>
+      <div class="pay-line"><span class="pay-lbl">A/C #</span><span class="pay-val">${b.account || '—'}</span></div>
+      <div class="pay-line"><span class="pay-lbl">IBAN</span><span class="pay-val">${b.iban || '—'}</span></div>
+    </div>`;
   });
+  h += '</div>';
   if (online.length) {
-    h += '<div class="print-group-title" style="margin:12px 0 8px;">ONLINE / WALLET</div>';
+    h += '<div class="print-group-title" style="margin:10px 0 6px;">ONLINE / WALLET</div>';
+    h += '<div class="pay-grid">';
     online.forEach(o => {
-      h += `<div class="pay-acct"><strong>${o.name}</strong><br>
-        ${o.title || ''} · ${o.account || ''}${o.note ? '<br>' + o.note : ''}</div>`;
+      h += `<div class="pay-acct">
+        <div class="pay-name">${o.name}</div>
+        <div class="pay-line"><span class="pay-lbl">Title</span><span class="pay-val">${o.title || '—'}</span></div>
+        <div class="pay-line"><span class="pay-lbl">Number</span><span class="pay-val">${o.account || '—'}</span></div>
+        ${o.note ? `<div class="pay-line"><span class="pay-lbl">Note</span><span class="pay-val">${o.note}</span></div>` : ''}
+      </div>`;
     });
+    h += '</div>';
   }
   h += '</div>';
   return h;
@@ -309,4 +321,4 @@ function printEntriesA4(list, title) {
   setTimeout(() => { window.print(); area.style.display = 'none'; area.innerHTML = ''; document.title = 'Brandex Law Associates — Client Ledger'; }, 200);
 }
 
-console.log('Brandex gaps-print v5 loaded (accounts + logo reports)');
+console.log('Brandex gaps-print v6 loaded (small logo + aligned banks)');
