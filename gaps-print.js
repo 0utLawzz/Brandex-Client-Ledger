@@ -1,9 +1,16 @@
-// --- Brandex prints: brand card header, dark-orange theme, grouped layout ---
+// --- Brandex prints v5: brand card, dark-orange, full payment accounts ---
 const STAGE_LABEL_P = { S1: 'Stage 1', S2: 'Stage 2', S3: 'Stage 3', S4: 'Stage 4' };
 function stageLabelP(s) { return (typeof stageLabel === 'function' ? stageLabel(s) : (STAGE_LABEL_P[s] || s || '—')); }
 const BRAND_P = (typeof BRAND !== 'undefined') ? BRAND : {
   name: 'Brandex Law Associates', email: 'info@brandex.pk', tagline: 'TRADEMARK REGISTRY',
-  banks: [{ name: 'Meezan Bank Limited', note: 'Use account details on invoice' }, { name: 'National Bank of Pakistan', note: 'Use account details on invoice' }]
+  banks: [
+    { name: 'United Bank Limited (UBL)', title: 'Brandex Pk', account: '0209301813886', iban: 'PK85UNIL0109000301813886' },
+    { name: 'Meezan Bank Limited', title: 'Brandex.pk', account: '9814-0104862477', iban: 'PK12MEZN0098140104862477' }
+  ],
+  online: [
+    { name: 'EasyPaisa', title: 'EHTASHAM UD DIN SIDDIQUI', account: '0336-0015009', note: 'Merchant Till 214114' },
+    { name: 'JazzCash / Raast ID', title: 'EHTASHAM UD DIN SIDDIQUI', account: '0336-0015004' }
+  ]
 };
 const PRINT_CARD = 'assets/brandex-social-preview-20261003.png';
 const DARK_ORANGE = '#8B3A00';
@@ -11,10 +18,14 @@ const THEME_GREEN = '#0D9970';
 const ACCENT_ORANGE = '#C94A00';
 
 function printBrandHeader(subtitle) {
+  const logo = 'assets/brandex-logo-15.png';
   return `<div class="print-card-wrap">
     <img src="${PRINT_CARD}" alt="Brandex Law Associates" class="print-card-img" onerror="this.style.display='none'">
     <div class="print-card-fallback">
-      <div class="print-brand">${BRAND_P.name}</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:6px;">
+        <img src="${logo}" alt="" style="width:44px;height:44px;border-radius:50%;border:2px solid #8B3A00;" onerror="this.style.display='none'">
+        <div class="print-brand">${BRAND_P.name}</div>
+      </div>
       <div class="print-sub" style="color:${ACCENT_ORANGE};font-weight:700;">${BRAND_P.tagline || 'TRADEMARK REGISTRY'}</div>
       <div class="print-sub">${BRAND_P.email} · brandex.pk</div>
     </div>
@@ -29,6 +40,26 @@ function stagePill(stage) {
 function tmPill(tm) {
   if (!tm || tm === '—') return '<span class="print-pill muted">No TM</span>';
   return `<span class="print-pill tm">TM ${tm}</span>`;
+}
+
+function paymentAccountsHTML() {
+  const banks = BRAND_P.banks || [];
+  const online = BRAND_P.online || [];
+  let h = '<div class="ack-banks"><div class="print-group-title" style="margin-bottom:8px;">BANK ACCOUNTS</div>';
+  banks.forEach(b => {
+    h += `<div class="pay-acct"><strong>${b.name}</strong><br>
+      Title: ${b.title || '—'} · AC#: ${b.account || '—'}<br>
+      IBAN: ${b.iban || '—'}</div>`;
+  });
+  if (online.length) {
+    h += '<div class="print-group-title" style="margin:12px 0 8px;">ONLINE / WALLET</div>';
+    online.forEach(o => {
+      h += `<div class="pay-acct"><strong>${o.name}</strong><br>
+        ${o.title || ''} · ${o.account || ''}${o.note ? '<br>' + o.note : ''}</div>`;
+    });
+  }
+  h += '</div>';
+  return h;
 }
 
 function buildAckHTML(entry, copyLabel) {
@@ -57,16 +88,13 @@ function buildAckHTML(entry, copyLabel) {
     <div class="print-group">
       <div class="print-group-title">PAYMENT</div>
       <div class="ack-row"><span>Receipt No</span><span><strong>${entry.receipt_no || '—'}</strong></span></div>
-      <div class="ack-row"><span>Date</span><span>${entry.entry_date || ''}</span></div>
-      <div class="ack-row"><span>Method</span><span>${entry.payment_method || '—'}</span></div>
-      <div class="ack-row"><span>Details</span><span>${entry.details || ''}</span></div>
+      <div class="ack-row"><span>Entry Date</span><span>${entry.entry_date || ''}</span></div>
+      <div class="ack-row"><span>Payment Method</span><span><strong>${entry.payment_method || '—'}</strong></span></div>
+      <div class="ack-row"><span>Details / Transfer Date</span><span>${entry.details || ''}</span></div>
       <div class="ack-row total"><span>Amount Received</span><span>PKR ${fmt(entry.amount_received)}</span></div>
     </div>
 
-    <div class="ack-banks">
-      <strong>Bank payment details</strong><br>
-      ${(BRAND_P.banks || []).map(b => b.name + (b.note ? ' — ' + b.note : '')).join('<br>')}
-    </div>
+    ${paymentAccountsHTML()}
     <div class="print-signs">
       <div>_________________<br>Received by</div>
       <div>_________________<br>Client / Bearer</div>
@@ -139,7 +167,7 @@ function printLedgerA4() {
     body += '</tbody></table></div>';
   });
   if (!rows.length) body += '<div class="print-meta" style="text-align:center;">No entries</div>';
-  body += '</div>';
+  body += paymentAccountsHTML() + '</div>';
 
   const area = document.getElementById('printArea');
   area.innerHTML = body;
@@ -272,7 +300,7 @@ function printEntriesA4(list, title) {
     body += '</div>';
   });
   if (!(list || []).length) body += '<div class="print-meta" style="text-align:center;">No rows</div>';
-  body += '</div>';
+  body += paymentAccountsHTML() + '</div>';
 
   const area = document.getElementById('printArea');
   area.innerHTML = body;
@@ -281,4 +309,4 @@ function printEntriesA4(list, title) {
   setTimeout(() => { window.print(); area.style.display = 'none'; area.innerHTML = ''; document.title = 'Brandex Law Associates — Client Ledger'; }, 200);
 }
 
-console.log('Brandex gaps-print v4 loaded (brand card + dark orange)');
+console.log('Brandex gaps-print v5 loaded (accounts + logo reports)');
