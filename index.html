@@ -1,1 +1,166 @@
-PLACEHOLDER
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brandex Law Associates — Client Ledger</title>
+<link rel="icon" type="image/png" href="assets/brandex-favicon-20261003.png">
+<link rel="apple-touch-icon" href="assets/brandex-logo-12.png">
+<meta property="og:image" content="assets/brandex-social-preview-20261003.png">
+<meta name="theme-color" content="#C94A00">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+@page { size: A4; margin: 12mm; }
+@media print {
+  .navbar,.tb,.lh-actions,.no-print,.ni,.nb-stats,.nb-nav { display:none!important; }
+  body { background:#fff!important; margin:0; }
+  .main { padding:0!important; max-width:none!important; }
+  .page { display:none!important; }
+  .page.active, #printArea, #printArea * { display:block!important; visibility:visible!important; }
+  #printArea { display:block!important; }
+  .ledger-page { box-shadow:none!important; border:1px solid #000; }
+  .ack-page { page-break-after: always; }
+  .ack-page:last-child { page-break-after: auto; }
+}
+#printArea { display:none; }
+.ack-sheet {
+  font-family:'Space Grotesk',sans-serif; max-width:190mm; margin:0 auto;
+  border:3px solid #0C0C0C; padding:18px 22px; background:#fff; color:#0C0C0C;
+}
+.ack-head { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #C94A00; padding-bottom:10px; margin-bottom:12px; }
+.ack-brand { font-family:'Bebas Neue',sans-serif; font-size:28px; letter-spacing:2px; color:#0C0C0C; }
+.ack-sub { font-family:'DM Mono',monospace; font-size:10px; color:#555; }
+.ack-copy { font-family:'DM Mono',monospace; font-size:10px; border:2px solid #0C0C0C; padding:4px 8px; }
+.ack-row { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px dashed #ccc; font-size:13px; }
+.ack-row.total { font-weight:700; font-size:16px; border-bottom:none; margin-top:8px; border-top:2px solid #0C0C0C; padding-top:8px; }
+.ack-banks { margin-top:14px; font-size:12px; border:2px solid #0C0C0C; padding:10px; background:#F0E8D0; }
+.series-banner { font-family:'Bebas Neue',sans-serif; font-size:42px; letter-spacing:3px; color:var(--accent); line-height:1; margin-bottom:4px; }
+.report-group { margin-bottom:18px; }
+.report-group h3 { font-family:'Bebas Neue',sans-serif; font-size:20px; border-left:6px solid var(--accent); padding-left:10px; margin-bottom:8px; }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nb-brand">
+    <img src="assets/brandex-logo-15.png" alt="Brandex" class="nb-logo" width="40" height="40">
+    <div><div class="nb-brand-text">BRANDEX</div><div class="nb-brand-sub">Client Ledger</div></div>
+  </div>
+  <div class="nb-nav">
+    <div class="ni active" data-page="dashboard">Dashboard</div>
+    <div class="ni" data-page="clients">Clients</div>
+    <div class="ni" data-page="actions">Actions</div>
+    <div class="ni" data-page="reports">Reports</div>
+  </div>
+  <div class="nb-stats">
+    <div class="nb-stat"><strong id="navClients">—</strong>Clients</div>
+    <div class="nb-stat"><strong id="navOutstanding">—</strong>Outstanding</div>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="page active" id="page-dashboard">
+    <div class="ph"><div class="ph-title">Dashboard</div><div class="ph-sub">Live payment & case statistics</div></div>
+    <div class="sg">
+      <div class="sc b"><div class="sc-lbl">Clients</div><div class="sc-val" id="statClients">0</div><div class="sc-sub">Active accounts</div></div>
+      <div class="sc g"><div class="sc-lbl">Total Received</div><div class="sc-val" id="statReceived">0</div><div class="sc-sub">PKR</div></div>
+      <div class="sc y"><div class="sc-lbl">Outstanding</div><div class="sc-val" id="statOutstanding">0</div><div class="sc-sub">PKR</div></div>
+      <div class="sc t"><div class="sc-lbl">Entries</div><div class="sc-val" id="statEntries">0</div><div class="sc-sub">All time</div></div>
+    </div>
+    <div class="tb no-print">
+      <button class="btn prim" onclick="showPage('actions')">+ Add Record / Receiving</button>
+      <button class="btn" onclick="showPage('clients')">View Clients</button>
+      <button class="btn" onclick="loadDashboard()">Refresh</button>
+    </div>
+    <div class="ledger-page" style="margin-top:12px;">
+      <div class="ledger-header" style="padding:12px 16px;"><strong style="font-family:'Bebas Neue';font-size:18px;">RECENT ACTIVITY</strong></div>
+      <div style="overflow-x:auto;min-height:80px;">
+        <table class="lt" id="recentTable" style="width:100%;min-width:640px;">
+          <thead><tr><th>Date</th><th>Client</th><th>Type</th><th>Stage</th><th>TM / Details</th><th>Due</th><th>Received</th></tr></thead>
+          <tbody id="recentTableBody"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="page" id="page-clients">
+    <div class="ph"><div class="ph-title">Clients</div><div class="ph-sub">Multi-series accounts · Custom stage rates</div></div>
+    <div class="tb">
+      <input class="fi" id="clientSearch" placeholder="Search code, name, city, phone…" oninput="renderClients()" style="max-width:280px;">
+      <select class="fsel" id="seriesFilter" onchange="renderClients()" style="max-width:160px;"><option value="">All Series</option></select>
+      <button class="btn prim" onclick="openClientModal()">+ New Client</button>
+    </div>
+    <div id="clientsGrid" class="clients-grid"></div>
+  </div>
+
+  <div class="page" id="page-actions">
+    <div class="ph"><div class="ph-title">Actions</div><div class="ph-sub">Post charge or receiving against TM / case</div></div>
+    <div class="sg" style="grid-template-columns:1fr 1fr;">
+      <div class="sc b" style="cursor:pointer;" onclick="openChargeModal()">
+        <div class="sc-lbl">Add Record</div>
+        <div class="sc-val" style="font-size:28px;">CHARGE</div>
+        <div class="sc-sub">Due amount by stage · TM key</div>
+      </div>
+      <div class="sc g" style="cursor:pointer;" onclick="openReceivingModal()">
+        <div class="sc-lbl">Add Receiving</div>
+        <div class="sc-val" style="font-size:28px;">PAYMENT</div>
+        <div class="sc-sub">Cash / Meezan / NBP · Print Ack</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page" id="page-reports">
+    <div class="ph"><div class="ph-title">Reports</div><div class="ph-sub">Filter · Group · Export A4</div></div>
+    <div class="tb">
+      <select class="fsel" id="reportClient" style="max-width:220px;"><option value="">All Clients</option></select>
+      <select class="fsel" id="reportGroup" style="max-width:140px;">
+        <option value="client">By Client</option>
+        <option value="case">By Case / TM</option>
+        <option value="stage">By Stage</option>
+      </select>
+      <button class="btn prim" onclick="runReport()">Run Report</button>
+      <button class="btn" onclick="printSelectedA4()">Print A4</button>
+    </div>
+    <div id="reportOutput" class="ledger-page" style="margin-top:12px;padding:16px;"></div>
+  </div>
+
+  <div class="page" id="page-ledger">
+    <div class="ph">
+      <div class="ph-title" id="ledgerTitle">Client Ledger</div>
+      <div class="ph-sub" id="ledgerSub">—</div>
+    </div>
+    <div class="tb lh-actions no-print">
+      <button class="btn" onclick="showPage('clients')">← Back</button>
+      <select class="fsel" id="ledgerCaseFilter" onchange="filterLedgerByCase()" style="max-width:200px;"><option value="">All Cases</option></select>
+      <button class="btn" onclick="toggleCurrentView()">Current View</button>
+      <button class="btn" onclick="openEditCaseModal()">Edit TM / App</button>
+      <button class="btn prim" onclick="openChargeModal(currentClientId)">+ Charge</button>
+      <button class="btn ok" onclick="openReceivingModal(currentClientId)">+ Receiving</button>
+      <button class="btn" onclick="printLedgerA4()">Print Ledger A4</button>
+    </div>
+    <div id="stageOutstanding" class="sg" style="grid-template-columns:repeat(4,1fr);margin:12px 0;display:none;"></div>
+    <div class="ledger-page">
+      <div style="overflow-x:auto;min-height:80px;"><table class="lt" id="clientLedgerTable" style="width:100%;min-width:700px;"><thead><tr><th>Date</th><th>Type</th><th>Stage</th><th>TM / Folder</th><th>Details</th><th>Due</th><th>Received</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+</main>
+
+<div class="mo" id="modalClient"><div class="mbox"><div class="mh"><div class="mt">CLIENT</div><button class="mc-btn" onclick="closeModal('modalClient')">×</button></div><div class="mb"><div class="fg"><div class="fgroup"><label class="flbl">Series</label><select class="fsel" id="cSeries"></select></div><div class="fgroup"><label class="flbl">Client Code *</label><input class="fi" id="cCode" placeholder="A-001"></div><div class="fgroup full"><label class="flbl">Client Name</label><input class="fi" id="cName"></div><div class="fgroup"><label class="flbl">City</label><input class="fi" id="cCity"></div><div class="fgroup"><label class="flbl">Email</label><input class="fi" id="cEmail" type="email"></div><div class="fgroup"><label class="flbl">Phone</label><input class="fi" id="cPhone"></div><div class="fgroup"><label class="flbl">Header Balance</label><input class="fi" id="cHeader" type="number" step="0.01" value="0"></div></div><div style="margin-top:16px;border-top:2px solid var(--black);padding-top:12px;"><div class="flbl" style="margin-bottom:8px;">Stage Rates (PKR)</div><div class="fg"><div class="fgroup"><label class="flbl">Stage 1</label><input class="fi" id="rS1" type="number" step="0.01" value="0"></div><div class="fgroup"><label class="flbl">Stage 2</label><input class="fi" id="rS2" type="number" step="0.01" value="0"></div><div class="fgroup"><label class="flbl">Stage 3</label><input class="fi" id="rS3" type="number" step="0.01" value="0"></div><div class="fgroup"><label class="flbl">Stage 4</label><input class="fi" id="rS4" type="number" step="0.01" value="0"></div></div></div></div><div class="mf"><button class="btn" onclick="closeModal('modalClient')">Cancel</button><button class="btn prim" onclick="saveClient()">Save Client</button></div></div></div>
+
+<div class="mo" id="modalCharge"><div class="mbox"><div class="mh"><div class="mt">ADD RECORD · CHARGE</div><button class="mc-btn" onclick="closeModal('modalCharge')">×</button></div><div class="mb"><div class="fg"><div class="fgroup full"><label class="flbl">Client *</label><select class="fsel" id="chClient" onchange="onChargeClientChange()"></select></div><div class="fgroup"><label class="flbl">TM (optional Stage 1)</label><input class="fi" id="chTM" onblur="autofillFromTM('ch')"></div><div class="fgroup"><label class="flbl">Folder No</label><input class="fi" id="chFolder"></div><div class="fgroup full"><label class="flbl">Application Name</label><input class="fi" id="chAppName"></div><div class="fgroup"><label class="flbl">Stage *</label><select class="fsel" id="chStage" onchange="applyStageRate()"><option value="S1">Stage 1</option><option value="S2">Stage 2</option><option value="S3">Stage 3</option><option value="S4">Stage 4</option></select></div><div class="fgroup"><label class="flbl">Amount Due *</label><input class="fi" id="chAmount" type="number" step="0.01"></div><div class="fgroup full"><label class="flbl">Details</label><input class="fi" id="chDetails"></div><div class="fgroup"><label class="flbl">Date</label><input class="fi" id="chDate" type="date"></div></div></div><div class="mf"><button class="btn" onclick="closeModal('modalCharge')">Cancel</button><button class="btn prim" onclick="saveCharge()">Post Charge</button></div></div></div>
+
+<div class="mo" id="modalReceiving"><div class="mbox"><div class="mh"><div class="mt">ADD RECEIVING</div><button class="mc-btn" onclick="closeModal('modalReceiving')">×</button></div><div class="mb"><div class="fg"><div class="fgroup full"><label class="flbl">Client *</label><select class="fsel" id="rcClient" onchange="populateLinkedCharges(this.value)"></select></div><div class="fgroup"><label class="flbl">TM (lookup)</label><input class="fi" id="rcTM" onblur="autofillFromTM('rc')"></div><div class="fgroup"><label class="flbl">Stage</label><select class="fsel" id="rcStage"><option value="">General</option><option value="S1">Stage 1</option><option value="S2">Stage 2</option><option value="S3">Stage 3</option><option value="S4">Stage 4</option></select></div><div class="fgroup"><label class="flbl">Amount Received *</label><input class="fi" id="rcAmount" type="number" step="0.01"></div><div class="fgroup"><label class="flbl">Payment Method *</label><select class="fsel" id="rcMethod" onchange="onPaymentMethodChange()"><option value="Cash">Cash</option><option value="Meezan Bank Limited">Meezan Bank Limited</option><option value="National Bank of Pakistan">National Bank of Pakistan</option><option value="Online">Online</option><option value="Cheque">Cheque</option></select></div><div class="fgroup" id="rcBankDateWrap" style="display:none;"><label class="flbl">Bank / Transfer Date</label><input class="fi" id="rcBankDate" type="date"></div><div class="fgroup"><label class="flbl">Entry Date</label><input class="fi" id="rcDate" type="date"></div><div class="fgroup full"><label class="flbl">Link to charge</label><select class="fsel" id="rcLinkedCharge"><option value="">— None —</option></select></div><div class="fgroup full"><label class="flbl">Notes</label><input class="fi" id="rcNotes"></div></div></div><div class="mf"><button class="btn" onclick="closeModal('modalReceiving')">Cancel</button><button class="btn ok" onclick="saveReceiving()">Save Payment</button></div></div></div>
+
+<div class="mo" id="modalEditCase"><div class="mbox"><div class="mh"><div class="mt">EDIT CASE · TM</div><button class="mc-btn" onclick="closeModal('modalEditCase')">×</button></div><div class="mb"><input type="hidden" id="ecCaseId"><div class="fg"><div class="fgroup full"><label class="flbl">Select case</label><select class="fsel" id="ecCaseSelect" onchange="onEditCaseSelect()"></select></div><div class="fgroup"><label class="flbl">TM Number</label><input class="fi" id="ecTM"></div><div class="fgroup"><label class="flbl">Folder No</label><input class="fi" id="ecFolder"></div><div class="fgroup full"><label class="flbl">Application Name</label><input class="fi" id="ecAppName"></div></div></div><div class="mf"><button class="btn" onclick="closeModal('modalEditCase')">Cancel</button><button class="btn prim" onclick="saveEditCase()">Save Case</button></div></div></div>
+
+<div id="printArea"></div>
+<div class="toast" id="toast"></div>
+<script src="app.js"></script>
+<script src="gaps.js"></script>
+<script src="gaps-print.js"></script>
+<script src="assets.js"></script>
+<script src="brand-patch.js"></script>
+</body>
+</html>
