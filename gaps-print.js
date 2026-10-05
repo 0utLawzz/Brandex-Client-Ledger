@@ -1,4 +1,4 @@
-// --- Acknowledgment: 2 copies, A4, branded ---
+// --- Acknowledgment + A4 ledger/report prints (branded tables) ---
 const STAGE_LABEL_P = { S1: 'Stage 1', S2: 'Stage 2', S3: 'Stage 3', S4: 'Stage 4' };
 function stageLabelP(s) { return (typeof stageLabel === 'function' ? stageLabel(s) : (STAGE_LABEL_P[s] || s || '—')); }
 const BRAND_P = (typeof BRAND !== 'undefined') ? BRAND : {
@@ -13,15 +13,15 @@ function buildAckHTML(entry, copyLabel) {
   return `
   <div class="ack-sheet ack-page">
     <div class="ack-head">
-      <div style="display:flex;align-items:center;">
-        <img src="assets/brandex-logo-15.png" alt="Brandex" class="ack-logo" onerror="this.style.display='none'">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <img src="assets/brandex-logo-15.png" alt="Brandex" class="ack-logo" style="width:48px;height:48px;border-radius:50%;border:2px solid #0C0C0C;" onerror="this.style.display='none'">
         <div>
-          <div class="ack-brand">${BRAND_P.name}</div>
+          <div class="ack-brand" style="color:#C94A00;">${BRAND_P.name}</div>
           <div class="ack-sub">${BRAND_P.tagline || ''}</div>
           <div class="ack-sub">${BRAND_P.email} · brandex.pk</div>
         </div>
       </div>
-      <div class="ack-copy">${copyLabel}</div>
+      <div class="ack-copy" style="background:#C94A00;color:#fff;">${copyLabel}</div>
     </div>
     <div class="ack-title">PAYMENT ACKNOWLEDGMENT</div>
     <div class="ack-row"><span>Receipt No</span><span>${entry.receipt_no || '—'}</span></div>
@@ -34,9 +34,9 @@ function buildAckHTML(entry, copyLabel) {
     <div class="ack-row"><span>Stage</span><span>${stageLabelP(entry.stage) || 'General'}</span></div>
     <div class="ack-row"><span>Method</span><span>${entry.payment_method || '—'}</span></div>
     <div class="ack-row"><span>Details</span><span>${entry.details || ''}</span></div>
-    <div class="ack-row total"><span>Amount Received</span><span>PKR ${fmt(entry.amount_received)}</span></div>
-    <div class="ack-banks">
-      <strong>Bank payment details</strong><br>
+    <div class="ack-row total" style="color:#C94A00;"><span>Amount Received</span><span>PKR ${fmt(entry.amount_received)}</span></div>
+    <div class="ack-banks" style="border-color:#C94A00;background:#FFF0E6;">
+      <strong style="color:#C94A00;">Bank payment details</strong><br>
       ${(BRAND_P.banks || []).map(b => b.name + (b.note ? ' — ' + b.note : '')).join('<br>')}
     </div>
     <div style="margin-top:28px;display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:11px;">
@@ -51,42 +51,60 @@ function printAck(entryId) {
   const entry = mem.entries.find(e => e.id === entryId);
   if (!entry) return toast('Entry not found');
   const area = document.getElementById('printArea');
+  if (!area) return toast('Print area missing');
   area.innerHTML = buildAckHTML(entry, 'OFFICE COPY') + buildAckHTML(entry, 'CLIENT COPY');
   area.style.display = 'block';
-  document.title = 'Ack_' + (entry.receipt_no || entryId.slice(0, 8)) + '_A4';
-  setTimeout(() => { window.print(); area.style.display = 'none'; document.title = 'Brandex Law Associates — Client Ledger'; }, 150);
+  document.title = 'Ack_' + (entry.receipt_no || String(entryId).slice(0, 8)) + '_A4';
+  setTimeout(function () {
+    window.print();
+    area.style.display = 'none';
+    area.innerHTML = '';
+    document.title = 'Brandex Law Associates — Client Ledger';
+  }, 200);
 }
 
 function printLedgerA4() {
-  if (!currentClientId) return;
-  const c = mem.clients.find(x => x.id === currentClientId);
+  if (!currentClientId) return toast('Open a client ledger first');
+  const c = mem.clients.find(x => x.id === currentClientId) || {};
   let rows = window._ledgerRows || mem.entries.filter(e => e.client_id === currentClientId);
   const caseId = document.getElementById('ledgerCaseFilter')?.value;
   if (caseId) rows = rows.filter(e => e.cases?.id === caseId);
-  rows = (typeof activeEntries === 'function') ? activeEntries(rows) : rows;
-  const name = (c?.client_code || 'Ledger') + '_Ledger_A4';
-  let body = `<div class="ack-sheet"><div class="ack-brand">${BRAND_P.name}</div>
-    <div class="ack-sub">${BRAND_P.email} · Client Ledger</div>
-    <div style="font-family:Bebas Neue;font-size:24px;margin:10px 0;">${c?.client_code || ''} — ${c?.client_name || ''}</div>
-    <div class="ack-sub">Phone: ${c?.phone || '—'} · Email: ${c?.email || '—'}</div>
-    <table style="width:100%;border-collapse:collapse;margin-top:12px;font-size:11px;">
-      <thead><tr style="background:#0C0C0C;color:#FAF6EE;">
-        <th style="padding:6px;text-align:left;">Date</th><th>Type</th><th>Stage</th><th>TM</th><th>Details</th><th>Due</th><th>Rec</th>
+  rows = (typeof activeEntries === 'function') ? activeEntries(rows) : rows.filter(e => !e.voided_at);
+  const logo = 'assets/brandex-logo-15.png';
+  let body = `<div class="ack-sheet">
+    <div class="print-head ack-head">
+      <div style="display:flex;gap:12px;align-items:center;">
+        <img src="${logo}" alt="Brandex" class="ack-logo" style="width:48px;height:48px;border-radius:50%;border:2px solid #0C0C0C;" onerror="this.style.display='none'">
+        <div>
+          <div class="print-brand">${BRAND_P.name}</div>
+          <div class="print-sub">${BRAND_P.email} · Client Ledger · A4</div>
+        </div>
+      </div>
+    </div>
+    <div style="font-family:Bebas Neue,sans-serif;font-size:22px;margin:8px 0;">${c.client_code || ''} — ${c.client_name || ''}</div>
+    <div class="print-sub" style="margin-bottom:12px;">Phone: ${c.phone || '—'} · Email: ${c.email || '—'} · City: ${c.city || '—'}</div>
+    <table class="print-table">
+      <thead><tr>
+        <th>Date</th><th>Type</th><th>Stage</th><th>TM</th><th>Details</th><th style="text-align:right;">Due</th><th style="text-align:right;">Rec</th>
       </tr></thead><tbody>`;
   rows.forEach(e => {
-    body += `<tr style="border-bottom:1px solid #ccc;">
-      <td style="padding:5px;">${e.entry_date || ''}</td>
-      <td>${e.entry_type}</td><td>${stageLabelP(e.stage)}</td>
-      <td>${e.cases?.tm_no || '—'}</td><td>${e.details || ''}</td>
-      <td>${e.amount_due ? fmt(e.amount_due) : ''}</td>
-      <td>${e.amount_received ? fmt(e.amount_received) : ''}</td></tr>`;
+    body += `<tr>
+      <td>${e.entry_date || ''}</td>
+      <td>${e.entry_type || ''}</td>
+      <td>${stageLabelP(e.stage)}</td>
+      <td>${e.cases?.tm_no || '—'}</td>
+      <td>${e.details || ''}${e.payment_method ? ' · ' + e.payment_method : ''}</td>
+      <td class="amt">${e.amount_due ? fmt(e.amount_due) : ''}</td>
+      <td class="amt">${e.amount_received ? fmt(e.amount_received) : ''}</td>
+    </tr>`;
   });
+  if (!rows.length) body += '<tr><td colspan="7" style="text-align:center;color:#555;">No entries</td></tr>';
   body += '</tbody></table></div>';
   const area = document.getElementById('printArea');
   area.innerHTML = body;
   area.style.display = 'block';
-  document.title = name;
-  setTimeout(() => { window.print(); area.style.display = 'none'; document.title = 'Brandex Law Associates — Client Ledger'; }, 150);
+  document.title = (c.client_code || 'Ledger') + '_Ledger_A4';
+  setTimeout(() => { window.print(); area.style.display = 'none'; area.innerHTML = ''; document.title = 'Brandex Law Associates — Client Ledger'; }, 200);
 }
 
 runReport = function() {
@@ -189,27 +207,40 @@ function printReportA4() {
 }
 
 function printEntriesA4(list, title) {
-  let body = `<div class="ack-sheet"><div class="ack-brand">${BRAND_P.name}</div>
-    <div class="ack-sub">${BRAND_P.email} · Ledger export · A4</div>
-    <table style="width:100%;border-collapse:collapse;margin-top:12px;font-size:10px;">
-      <thead><tr style="background:#0C0C0C;color:#FAF6EE;">
-        <th style="padding:5px;text-align:left;">Date</th><th>Client</th><th>Type</th><th>Stage</th><th>TM</th><th>Details</th><th>Due</th><th>Rec</th>
+  const logo = 'assets/brandex-logo-15.png';
+  let body = `<div class="ack-sheet">
+    <div class="print-head ack-head">
+      <div style="display:flex;gap:12px;align-items:center;">
+        <img src="${logo}" alt="Brandex" class="ack-logo" style="width:48px;height:48px;border-radius:50%;border:2px solid #0C0C0C;" onerror="this.style.display='none'">
+        <div>
+          <div class="print-brand">${BRAND_P.name}</div>
+          <div class="print-sub">${BRAND_P.email} · Ledger export · A4</div>
+        </div>
+      </div>
+    </div>
+    <table class="print-table">
+      <thead><tr>
+        <th>Date</th><th>Client</th><th>Type</th><th>Stage</th><th>TM</th><th>Details</th><th style="text-align:right;">Due</th><th style="text-align:right;">Rec</th>
       </tr></thead><tbody>`;
-  list.forEach(e => {
-    body += `<tr style="border-bottom:1px solid #ccc;">
-      <td style="padding:4px;">${e.entry_date || ''}</td>
+  (list || []).forEach(e => {
+    body += `<tr>
+      <td>${e.entry_date || ''}</td>
       <td>${e.clients?.client_code || '—'}</td>
-      <td>${e.entry_type}</td><td>${stageLabelP(e.stage)}</td>
-      <td>${e.cases?.tm_no || '—'}</td><td>${e.details || ''}</td>
-      <td>${e.amount_due ? fmt(e.amount_due) : ''}</td>
-      <td>${e.amount_received ? fmt(e.amount_received) : ''}</td></tr>`;
+      <td>${e.entry_type || ''}</td>
+      <td>${stageLabelP(e.stage)}</td>
+      <td>${e.cases?.tm_no || '—'}</td>
+      <td>${e.details || ''}</td>
+      <td class="amt">${e.amount_due ? fmt(e.amount_due) : ''}</td>
+      <td class="amt">${e.amount_received ? fmt(e.amount_received) : ''}</td>
+    </tr>`;
   });
+  if (!(list || []).length) body += '<tr><td colspan="8" style="text-align:center;color:#555;">No rows</td></tr>';
   body += '</tbody></table></div>';
   const area = document.getElementById('printArea');
   area.innerHTML = body;
   area.style.display = 'block';
-  document.title = title;
-  setTimeout(() => { window.print(); area.style.display = 'none'; document.title = 'Brandex Law Associates — Client Ledger'; }, 150);
+  document.title = title || 'Ledger_A4';
+  setTimeout(() => { window.print(); area.style.display = 'none'; area.innerHTML = ''; document.title = 'Brandex Law Associates — Client Ledger'; }, 200);
 }
 
 console.log('Brandex gaps-print loaded');
