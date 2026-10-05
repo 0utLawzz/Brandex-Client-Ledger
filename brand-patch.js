@@ -84,17 +84,17 @@
     };
   }
 
-  // Richer acknowledgment with logo + brand color
+  // Richer ack branding
   if (typeof buildAckHTML === 'function') {
-    var _build = buildAckHTML;
+    var _bah = buildAckHTML;
     buildAckHTML = function (entry, copyLabel) {
+      var logo = (window.BRANDEX_ASSETS && (BRANDEX_ASSETS.logoMark || BRANDEX_ASSETS.favicon)) || 'assets/brandex-logo-15.png';
       var client = entry.clients || (mem.clients || []).find(function (c) { return c.id === entry.client_id; }) || {};
       var tm = (entry.cases && entry.cases.tm_no) || '—';
       var app = (entry.cases && entry.cases.application_name) || '—';
-      var logo = A.logoMark || 'assets/logo-mark.png';
       var stageTxt = (typeof stageLabel === 'function') ? stageLabel(entry.stage) : (entry.stage || 'General');
       return '<div class="ack-sheet ack-page">' +
-        '<div class="ack-head" style="display:flex;justify-content:space-between;align-items:center;background:#FFF0E6;padding:12px;border-bottom:3px solid #C94A00;">' +
+        '<div class="ack-head" style="border-bottom:3px solid #C94A00;">' +
         '<div style="display:flex;gap:12px;align-items:center;">' +
         '<img class="ack-logo" src="' + logo + '" alt="Brandex">' +
         '<div><div class="ack-brand" style="color:#C94A00;">' + (A.name || 'Brandex Law Associates') + '</div>' +
@@ -124,4 +124,65 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyChrome);
   else applyChrome();
   console.log('Brandex brand-patch loaded');
+})();
+
+// Client view fix — null-safe openClientLedger (lhCode/lhName/lhBal may be absent)
+(function () {
+  openClientLedger = async function (clientId) {
+    currentClientId = clientId;
+    currentViewMode = false;
+    var c = (mem.clients || []).find(function (x) { return x.id === clientId; });
+    if (!c) { if (typeof toast === 'function') toast('Client not found'); return; }
+    var due = 0, rec = 0;
+    var rows = (mem.entries || []).filter(function (e) { return e.client_id === clientId; });
+    var active = typeof activeEntries === 'function' ? activeEntries(rows) : rows;
+    active.forEach(function (e) {
+      due += Number(e.amount_due || 0);
+      rec += Number(e.amount_received || 0);
+    });
+    var bal = Number(c.header_balance || 0) + due - rec;
+    var title = document.getElementById('ledgerTitle');
+    if (title) title.textContent = (c.client_code || '') + ' · Ledger';
+    var sub = document.getElementById('ledgerSub');
+    if (sub) {
+      var parts = [c.client_name || '', c.phone ? ('Phone ' + c.phone) : '', c.email ? ('Email ' + c.email) : '', c.city ? ('City ' + c.city) : '', 'Balance ' + fmt(bal)];
+      sub.textContent = parts.filter(Boolean).join(' · ');
+    }
+    function setTxt(id, v) { var el = document.getElementById(id); if (el) el.textContent = v; }
+    setTxt('lhCode', c.client_code || '');
+    setTxt('lhName', c.client_name || '—');
+    setTxt('lhBal', fmt(bal));
+    if (typeof renderStageOutstanding === 'function') renderStageOutstanding(rows);
+    var sel = document.getElementById('ledgerCaseFilter');
+    if (sel) {
+      var cases = {};
+      rows.forEach(function (e) {
+        if (e.cases && e.cases.id) cases[e.cases.id] = e.cases.tm_no || e.cases.application_name || e.cases.folder_no || String(e.cases.id).slice(0, 8);
+      });
+      sel.innerHTML = '<option value="">All cases</option>';
+      Object.keys(cases).forEach(function (k) {
+        sel.innerHTML += '<option value="' + k + '">' + cases[k] + '</option>';
+      });
+    }
+    window._ledgerRows = rows;
+    if (typeof renderClientEntries === 'function') renderClientEntries(rows);
+    showPage('ledger');
+  };
+
+  populateLedgerCaseFilter = function (rows) {
+    var sel = document.getElementById('ledgerCaseFilter');
+    if (!sel) return;
+    var bar = document.getElementById('caseFilterBar');
+    var cases = {};
+    (rows || []).forEach(function (e) {
+      if (e.cases && e.cases.id) cases[e.cases.id] = e.cases.tm_no || e.cases.application_name || e.cases.folder_no || String(e.cases.id).slice(0, 8);
+    });
+    var keys = Object.keys(cases);
+    if (bar) bar.style.display = keys.length ? 'flex' : 'none';
+    sel.innerHTML = '<option value="">All cases</option>';
+    keys.forEach(function (k) {
+      sel.innerHTML += '<option value="' + k + '">' + cases[k] + '</option>';
+    });
+  };
+  console.log('Brandex client-view fix loaded');
 })();
