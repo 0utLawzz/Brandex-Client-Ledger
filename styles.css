@@ -88,6 +88,14 @@ body{font-family:'Space Grotesk',Arial,sans-serif;background:var(--bg);color:var
 .client-card .cc-bal.pos{color:var(--accent2);}
 .series-banner{font-family:'Bebas Neue',sans-serif;font-size:42px;letter-spacing:3px;color:var(--accent);line-height:1;margin-bottom:4px;}
 
+/* Client card detail rows */
+.client-card .cc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+.client-card .cc-no{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;}
+.client-card .cc-series{font-family:'DM Mono',monospace;font-size:10px;border:2px solid var(--black);padding:2px 6px;background:var(--bg);}
+.client-card .cc-divider{height:2px;background:var(--black);margin:8px 0;}
+.client-card .cc-row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;font-family:'DM Mono',monospace;}
+.client-card .cc-row span:first-child{color:var(--muted);}
+
 /* LEDGER TABLE */
 .ledger-page{background:var(--panel);border:3px solid var(--black);box-shadow:5px 5px 0 var(--black);}
 .ledger-header{border-bottom:3px solid var(--black);}
