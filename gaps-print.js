@@ -43,7 +43,7 @@ function buildAckHTML(entry, copyLabel) {
       <div>_________________<br>Received by</div>
       <div>_________________<br>Client / Bearer</div>
     </div>
-    <div style="margin-top:16px;text-align:center;font-family:'DM Mono',monospace;font-size:9px;color:#555;">Thank you · ${BRAND_P.name} · brandex.pk</div>
+    <div style="margin-top:16px;text-align:center;font-family:'DM Mono',monospace;font-size:9px;color:#555;">Thank you · ${BRAND_P.name}</div>
   </div>`;
 }
 
@@ -63,7 +63,7 @@ function printLedgerA4() {
   let rows = window._ledgerRows || mem.entries.filter(e => e.client_id === currentClientId);
   const caseId = document.getElementById('ledgerCaseFilter')?.value;
   if (caseId) rows = rows.filter(e => e.cases?.id === caseId);
-  rows = activeEntries(rows);
+  rows = (typeof activeEntries === 'function') ? activeEntries(rows) : rows;
   const name = (c?.client_code || 'Ledger') + '_Ledger_A4';
   let body = `<div class="ack-sheet"><div class="ack-brand">${BRAND_P.name}</div>
     <div class="ack-sub">${BRAND_P.email} · Client Ledger</div>
@@ -90,13 +90,15 @@ function printLedgerA4() {
 }
 
 runReport = function() {
-  const q = (document.getElementById('reportSearch').value || '').toLowerCase();
-  const stage = document.getElementById('reportStage').value;
-  const clientId = document.getElementById('reportClient')?.value || '';
-  const group = document.getElementById('reportGroup')?.value || 'flat';
-  const from = document.getElementById('reportFrom')?.value || '';
-  const to = document.getElementById('reportTo')?.value || '';
-  let list = [...mem.entries];
+  const safeVal = (id) => { const el = document.getElementById(id); return el ? (el.value || '') : ''; };
+  const q = (safeVal('reportSearch') || '').toLowerCase();
+  const stage = safeVal('reportStage');
+  const clientId = safeVal('reportClient');
+  const group = safeVal('reportGroup') || 'client';
+  const from = safeVal('reportFrom');
+  const to = safeVal('reportTo');
+  let list = [...(mem.entries || [])];
+  if (typeof activeEntries === 'function') list = activeEntries(list);
   if (clientId) list = list.filter(e => e.client_id === clientId);
   if (stage) list = list.filter(e => e.stage === stage);
   if (from) list = list.filter(e => (e.entry_date || '') >= from);
@@ -109,8 +111,9 @@ runReport = function() {
     return code.includes(q) || tm.includes(q) || app.includes(q) || det.includes(q);
   });
   window._reportRows = list;
-  selectedRows.clear();
-  const wrap = document.getElementById('reportContent');
+  if (typeof selectedRows !== 'undefined') selectedRows.clear();
+  const wrap = document.getElementById('reportOutput') || document.getElementById('reportContent');
+  if (!wrap) return toast('Report panel missing');
   if (group === 'flat') {
     wrap.innerHTML = `<table class="lt" id="reportTable" style="width:100%;min-width:700px;">
       <thead><tr>
@@ -132,17 +135,18 @@ runReport = function() {
     });
     let html = '';
     Object.keys(groups).sort().forEach(k => {
-      html += `<div class="report-group"><h3>${k} <span style="font-size:12px;color:var(--muted);">(${groups[k].length})</span></h3>
-        <table class="lt" style="width:100%;min-width:700px;"><thead><tr>
-          <th><input type="checkbox" onchange="toggleGroupChecks(this)"></th>
-          <th>Date</th><th>Client</th><th>Type</th><th>Stage</th><th>TM</th><th>Details</th><th>Due</th><th>Received</th>
+      html += `<div class="report-group"><h3>${k} <span style="font-size:12px;color:var(--muted);">(${groups[k].length})</span>
+        <label style="font-size:11px;margin-left:8px;"><input type="checkbox" onchange="toggleGroupChecks(this)"> all</label></h3>
+        <table class="lt" style="width:100%;min-width:640px;"><thead><tr>
+          <th></th><th>Date</th><th>Client</th><th>Type</th><th>Stage</th><th>TM</th><th>Details</th><th>Due</th><th>Received</th>
         </tr></thead><tbody>`;
       groups[k].forEach(e => { html += reportRowHTML(e); });
       html += '</tbody></table></div>';
     });
-    if (!list.length) html = '<div class="empty">No rows</div>';
+    if (!Object.keys(groups).length) html = '<div class="empty">No rows match filters</div>';
     wrap.innerHTML = html;
   }
+  toast(list.length + ' row(s)');
 };
 
 function reportRowHTML(e) {
@@ -156,17 +160,18 @@ function reportRowHTML(e) {
     <td>${e.entry_type}</td>
     <td>${badge}</td>
     <td>${tm}</td>
-    <td>${e.details || ''}</td>
+    <td>${e.details || ''}${e.payment_method ? ' · ' + e.payment_method : ''}</td>
     <td class="amt-due">${e.amount_due ? fmt(e.amount_due) : ''}</td>
     <td class="amt-rec">${e.amount_received ? fmt(e.amount_received) : ''}</td>
   </tr>`;
 }
 
 function toggleGroupChecks(el) {
-  const table = el.closest('table');
+  const table = el.closest('.report-group')?.querySelector('table');
+  if (!table) return;
   table.querySelectorAll('.row-check').forEach(cb => {
     cb.checked = el.checked;
-    toggleRow(cb.value, el.checked);
+    if (typeof toggleRow === 'function') toggleRow(cb.value, el.checked);
   });
 }
 
@@ -193,9 +198,9 @@ function printEntriesA4(list, title) {
   list.forEach(e => {
     body += `<tr style="border-bottom:1px solid #ccc;">
       <td style="padding:4px;">${e.entry_date || ''}</td>
-      <td>${e.clients?.client_code || ''}</td>
+      <td>${e.clients?.client_code || '—'}</td>
       <td>${e.entry_type}</td><td>${stageLabelP(e.stage)}</td>
-      <td>${e.cases?.tm_no || '—'}</td><td>${(e.details || '').slice(0, 40)}</td>
+      <td>${e.cases?.tm_no || '—'}</td><td>${e.details || ''}</td>
       <td>${e.amount_due ? fmt(e.amount_due) : ''}</td>
       <td>${e.amount_received ? fmt(e.amount_received) : ''}</td></tr>`;
   });
@@ -206,10 +211,5 @@ function printEntriesA4(list, title) {
   document.title = title;
   setTimeout(() => { window.print(); area.style.display = 'none'; document.title = 'Brandex Law Associates — Client Ledger'; }, 150);
 }
-
-exportImage = function() {
-  toast('Use Print → Save as PDF (A4)');
-  printReportA4();
-};
 
 console.log('Brandex gaps-print loaded');
