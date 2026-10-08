@@ -1,4 +1,4 @@
-// --- Brandex prints v6: small top logo, aligned bank accounts ---
+// --- Brandex prints v7: small logo, case multi-pay status on ack ---
 const STAGE_LABEL_P = { S1: 'Stage 1', S2: 'Stage 2', S3: 'Stage 3', S4: 'Stage 4' };
 function stageLabelP(s) { return (typeof stageLabel === 'function' ? stageLabel(s) : (STAGE_LABEL_P[s] || s || '—')); }
 const BRAND_P = (typeof BRAND !== 'undefined') ? BRAND : {
@@ -19,7 +19,6 @@ const ACCENT_ORANGE = '#C94A00';
 
 function printBrandHeader(subtitle) {
   const logo = 'assets/brandex-logo-15.png';
-  // Small logo on top only — does not cover content area
   return `<div class="print-card-wrap">
     <div class="print-head-row">
       <img src="${logo}" alt="Brandex" class="print-logo-sm" onerror="this.style.display='none'">
@@ -79,6 +78,20 @@ function buildAckHTML(entry, copyLabel) {
   const tm = entry.cases?.tm_no || '—';
   const app = entry.cases?.application_name || '—';
   const series = client.series?.code || '';
+  const isOffice = String(copyLabel || '').toUpperCase().indexOf('OFFICE') >= 0;
+  let caseDue = 0, caseRec = 0, recCount = 0;
+  try {
+    const cid = entry.client_id;
+    const caseId = entry.case_id || entry.cases?.id;
+    const list = (typeof activeEntries === 'function' ? activeEntries(mem.entries || []) : (mem.entries || []).filter(e => !e.voided_at));
+    list.filter(e => e.client_id === cid && (!caseId || e.case_id === caseId || e.cases?.id === caseId)).forEach(e => {
+      caseDue += Number(e.amount_due || 0);
+      caseRec += Number(e.amount_received || 0);
+      if (e.entry_type === 'receiving') recCount++;
+    });
+  } catch (err) {}
+  const remain = Math.max(caseDue - caseRec, 0);
+  const paidFull = caseDue > 0 && remain === 0;
   return `
   <div class="ack-sheet ack-page">
     ${printBrandHeader('PAYMENT ACKNOWLEDGMENT')}
@@ -98,15 +111,22 @@ function buildAckHTML(entry, copyLabel) {
     </div>
 
     <div class="print-group">
-      <div class="print-group-title">PAYMENT</div>
+      <div class="print-group-title">THIS RECEIPT</div>
       <div class="ack-row"><span>Receipt No</span><span><strong>${entry.receipt_no || '—'}</strong></span></div>
       <div class="ack-row"><span>Entry Date</span><span>${entry.entry_date || ''}</span></div>
       <div class="ack-row"><span>Payment Method</span><span><strong>${entry.payment_method || '—'}</strong></span></div>
       <div class="ack-row"><span>Details / Transfer Date</span><span>${entry.details || ''}</span></div>
-      <div class="ack-row total"><span>Amount Received</span><span>PKR ${fmt(entry.amount_received)}</span></div>
+      <div class="ack-row total"><span>Amount on this receipt</span><span>PKR ${fmt(entry.amount_received)}</span></div>
     </div>
 
-    ${paymentAccountsHTML()}
+    <div class="print-group">
+      <div class="print-group-title">CASE PAYMENT STATUS (all dates)</div>
+      <div class="ack-row"><span>Total charged (due)</span><span>PKR ${fmt(caseDue)}</span></div>
+      <div class="ack-row"><span>Total received (${recCount} transaction${recCount === 1 ? '' : 's'})</span><span>PKR ${fmt(caseRec)}</span></div>
+      <div class="ack-row total"><span>${paidFull ? '✓ PAID IN FULL' : 'Balance remaining'}</span><span>PKR ${fmt(remain)}</span></div>
+    </div>
+
+    ${isOffice ? paymentAccountsHTML() : '<div class="print-meta" style="margin-top:10px;text-align:center;">Client copy · Keep for your records</div>'}
     <div class="print-signs">
       <div>_________________<br>Received by</div>
       <div>_________________<br>Client / Bearer</div>
@@ -159,9 +179,13 @@ function printLedgerA4() {
   Object.keys(byTm).sort().forEach(tmKey => {
     const list = byTm[tmKey];
     const stageSet = [...new Set(list.map(e => e.stage).filter(Boolean))];
+    let due = 0, rec = 0;
+    list.forEach(e => { due += Number(e.amount_due || 0); rec += Number(e.amount_received || 0); });
+    const remain = Math.max(due - rec, 0);
     body += `<div class="print-group">
       <div class="print-group-title">CASE / PAYMENT</div>
       <div class="print-pills">${tmPill(tmKey === 'General / No TM' ? null : tmKey)} ${stageSet.map(stagePill).join(' ')}</div>
+      <div class="print-meta"><strong>Due</strong> ${fmt(due)} · <strong>Received</strong> ${fmt(rec)} · <strong>${remain === 0 && due > 0 ? 'PAID IN FULL' : 'Balance ' + fmt(remain)}</strong></div>
       <table class="print-table">
         <thead><tr>
           <th>Date</th><th>Type</th><th>Stage</th><th>Details</th><th style="text-align:right;">Due</th><th style="text-align:right;">Rec</th>
@@ -179,7 +203,7 @@ function printLedgerA4() {
     body += '</tbody></table></div>';
   });
   if (!rows.length) body += '<div class="print-meta" style="text-align:center;">No entries</div>';
-  body += paymentAccountsHTML() + '</div>';
+  body += '</div>';
 
   const area = document.getElementById('printArea');
   area.innerHTML = body;
@@ -312,7 +336,7 @@ function printEntriesA4(list, title) {
     body += '</div>';
   });
   if (!(list || []).length) body += '<div class="print-meta" style="text-align:center;">No rows</div>';
-  body += paymentAccountsHTML() + '</div>';
+  body += '</div>';
 
   const area = document.getElementById('printArea');
   area.innerHTML = body;
@@ -321,4 +345,4 @@ function printEntriesA4(list, title) {
   setTimeout(() => { window.print(); area.style.display = 'none'; area.innerHTML = ''; document.title = 'Brandex Law Associates — Client Ledger'; }, 200);
 }
 
-console.log('Brandex gaps-print v6 loaded (small logo + aligned banks)');
+console.log('Brandex gaps-print v7 loaded (ack multi-pay status)');
