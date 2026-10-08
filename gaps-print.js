@@ -1,4 +1,4 @@
-// --- Brandex prints v7: small logo, case multi-pay status on ack ---
+// --- Brandex prints v8: one-page dual ack (client + office) ---
 const STAGE_LABEL_P = { S1: 'Stage 1', S2: 'Stage 2', S3: 'Stage 3', S4: 'Stage 4' };
 function stageLabelP(s) { return (typeof stageLabel === 'function' ? stageLabel(s) : (STAGE_LABEL_P[s] || s || '—')); }
 const BRAND_P = (typeof BRAND !== 'undefined') ? BRAND : {
@@ -52,20 +52,15 @@ function paymentAccountsHTML() {
       <div class="pay-name">${b.name}</div>
       <div class="pay-line"><span class="pay-lbl">Title</span><span class="pay-val">${b.title || '—'}</span></div>
       <div class="pay-line"><span class="pay-lbl">A/C #</span><span class="pay-val">${b.account || '—'}</span></div>
-      <div class="pay-line"><span class="pay-lbl">IBAN</span><span class="pay-val">${b.iban || '—'}</span></div>
-    </div>`;
+      <div class="pay-line"><span class="pay-lbl">IBAN</span><span class="pay-val">${b.iban || '—'}</div>`;
   });
   h += '</div>';
   if (online.length) {
-    h += '<div class="print-group-title" style="margin:10px 0 6px;">ONLINE / WALLET</div>';
-    h += '<div class="pay-grid">';
+    h += '<div class="print-group-title" style="margin:10px 0 6px;">ONLINE / WALLET</div><div class="pay-grid">';
     online.forEach(o => {
-      h += `<div class="pay-acct">
-        <div class="pay-name">${o.name}</div>
+      h += `<div class="pay-acct"><div class="pay-name">${o.name}</div>
         <div class="pay-line"><span class="pay-lbl">Title</span><span class="pay-val">${o.title || '—'}</span></div>
-        <div class="pay-line"><span class="pay-lbl">Number</span><span class="pay-val">${o.account || '—'}</span></div>
-        ${o.note ? `<div class="pay-line"><span class="pay-lbl">Note</span><span class="pay-val">${o.note}</span></div>` : ''}
-      </div>`;
+        <div class="pay-line"><span class="pay-lbl">Number</span><span class="pay-val">${o.account || '—'}</span></div></div>`;
     });
     h += '</div>';
   }
@@ -93,45 +88,32 @@ function buildAckHTML(entry, copyLabel) {
   const remain = Math.max(caseDue - caseRec, 0);
   const paidFull = caseDue > 0 && remain === 0;
   return `
-  <div class="ack-sheet ack-page">
-    ${printBrandHeader('PAYMENT ACKNOWLEDGMENT')}
-    <div class="ack-copy-bar"><span class="ack-copy">${copyLabel}</span></div>
-
-    <div class="print-group">
-      <div class="print-group-title">CLIENT</div>
-      <div class="print-big">${series ? series + ' · ' : ''}${client.client_code || '—'}</div>
-      <div class="print-big-sub">${client.client_name || '—'}</div>
-      <div class="print-meta">${client.phone || '—'} · ${client.email || '—'} · ${client.city || '—'}</div>
+  <div class="ack-half">
+    <div class="ack-half-bar"><span class="ack-copy">${copyLabel}</span></div>
+    <div class="ack-half-grid">
+      <div>
+        <div class="print-group-title">CLIENT</div>
+        <div class="print-big-sm">${series ? series + ' · ' : ''}${client.client_code || '—'}</div>
+        <div class="print-big-sub-sm">${client.client_name || '—'}</div>
+        <div class="print-meta">${client.phone || '—'} · ${client.city || '—'}</div>
+      </div>
+      <div>
+        <div class="print-group-title">CASE / TM</div>
+        <div class="print-pills">${tmPill(tm)} ${stagePill(entry.stage)}</div>
+        <div class="print-meta">${app}</div>
+      </div>
     </div>
-
-    <div class="print-group">
-      <div class="print-group-title">CASE / TM</div>
-      <div class="print-pills">${tmPill(tm)} ${stagePill(entry.stage)}</div>
-      <div class="print-meta"><strong>Application:</strong> ${app}</div>
+    <div class="ack-row"><span>Receipt</span><span><strong>${entry.receipt_no || '—'}</strong></span></div>
+    <div class="ack-row"><span>Date / Method</span><span>${entry.entry_date || ''} · <strong>${entry.payment_method || '—'}</strong></span></div>
+    <div class="ack-row"><span>Details</span><span>${entry.details || ''}</span></div>
+    <div class="ack-row total"><span>This receipt</span><span>PKR ${fmt(entry.amount_received)}</span></div>
+    <div class="ack-row"><span>Case total rec (${recCount} txn)</span><span>PKR ${fmt(caseRec)} / due ${fmt(caseDue)}</span></div>
+    <div class="ack-row"><span>${paidFull ? '✓ PAID IN FULL' : 'Balance'}</span><span>PKR ${fmt(remain)}</span></div>
+    ${isOffice ? `<div class="ack-banks-mini">${(BRAND_P.banks||[]).map(b => b.name + ': ' + (b.account||'')).join(' · ')}</div>` : ''}
+    <div class="print-signs-sm">
+      <div>__________<br>Received by</div>
+      <div>__________<br>Client</div>
     </div>
-
-    <div class="print-group">
-      <div class="print-group-title">THIS RECEIPT</div>
-      <div class="ack-row"><span>Receipt No</span><span><strong>${entry.receipt_no || '—'}</strong></span></div>
-      <div class="ack-row"><span>Entry Date</span><span>${entry.entry_date || ''}</span></div>
-      <div class="ack-row"><span>Payment Method</span><span><strong>${entry.payment_method || '—'}</strong></span></div>
-      <div class="ack-row"><span>Details / Transfer Date</span><span>${entry.details || ''}</span></div>
-      <div class="ack-row total"><span>Amount on this receipt</span><span>PKR ${fmt(entry.amount_received)}</span></div>
-    </div>
-
-    <div class="print-group">
-      <div class="print-group-title">CASE PAYMENT STATUS (all dates)</div>
-      <div class="ack-row"><span>Total charged (due)</span><span>PKR ${fmt(caseDue)}</span></div>
-      <div class="ack-row"><span>Total received (${recCount} transaction${recCount === 1 ? '' : 's'})</span><span>PKR ${fmt(caseRec)}</span></div>
-      <div class="ack-row total"><span>${paidFull ? '✓ PAID IN FULL' : 'Balance remaining'}</span><span>PKR ${fmt(remain)}</span></div>
-    </div>
-
-    ${isOffice ? paymentAccountsHTML() : '<div class="print-meta" style="margin-top:10px;text-align:center;">Client copy · Keep for your records</div>'}
-    <div class="print-signs">
-      <div>_________________<br>Received by</div>
-      <div>_________________<br>Client / Bearer</div>
-    </div>
-    <div class="print-thanks">Thank you · ${BRAND_P.name} · brandex.pk</div>
   </div>`;
 }
 
@@ -140,7 +122,13 @@ function printAck(entryId) {
   if (!entry) return toast('Entry not found');
   const area = document.getElementById('printArea');
   if (!area) return toast('Print area missing');
-  area.innerHTML = buildAckHTML(entry, 'OFFICE COPY') + buildAckHTML(entry, 'CLIENT COPY');
+  // ONE A4: client half + dotted line + office half
+  area.innerHTML = `<div class="ack-sheet ack-one-page">
+    ${printBrandHeader('PAYMENT ACKNOWLEDGMENT')}
+    ${buildAckHTML(entry, 'CLIENT COPY')}
+    <div class="ack-cut-line">- - - - - - - - - - - - cut / fold - - - - - - - - - - - -</div>
+    ${buildAckHTML(entry, 'OFFICE COPY')}
+  </div>`;
   area.style.display = 'block';
   document.title = 'Ack_' + (entry.receipt_no || String(entryId).slice(0, 8)) + '_A4';
   setTimeout(function () {
@@ -159,14 +147,12 @@ function printLedgerA4() {
   if (caseId) rows = rows.filter(e => e.cases?.id === caseId);
   rows = (typeof activeEntries === 'function') ? activeEntries(rows) : rows.filter(e => !e.voided_at);
   const series = c.series?.code || (mem.series || []).find(s => s.id === c.series_id)?.code || '';
-
   const byTm = {};
   rows.forEach(e => {
     const key = e.cases?.tm_no || e.cases?.application_name || e.cases?.folder_no || 'General / No TM';
     if (!byTm[key]) byTm[key] = [];
     byTm[key].push(e);
   });
-
   let body = `<div class="ack-sheet">
     ${printBrandHeader('CLIENT LEDGER · A4')}
     <div class="print-group">
@@ -175,7 +161,6 @@ function printLedgerA4() {
       <div class="print-big-sub">${c.client_name || '—'}</div>
       <div class="print-meta">Phone: ${c.phone || '—'} · Email: ${c.email || '—'} · City: ${c.city || '—'}</div>
     </div>`;
-
   Object.keys(byTm).sort().forEach(tmKey => {
     const list = byTm[tmKey];
     const stageSet = [...new Set(list.map(e => e.stage).filter(Boolean))];
@@ -186,25 +171,19 @@ function printLedgerA4() {
       <div class="print-group-title">CASE / PAYMENT</div>
       <div class="print-pills">${tmPill(tmKey === 'General / No TM' ? null : tmKey)} ${stageSet.map(stagePill).join(' ')}</div>
       <div class="print-meta"><strong>Due</strong> ${fmt(due)} · <strong>Received</strong> ${fmt(rec)} · <strong>${remain === 0 && due > 0 ? 'PAID IN FULL' : 'Balance ' + fmt(remain)}</strong></div>
-      <table class="print-table">
-        <thead><tr>
-          <th>Date</th><th>Type</th><th>Stage</th><th>Details</th><th style="text-align:right;">Due</th><th style="text-align:right;">Rec</th>
-        </tr></thead><tbody>`;
+      <table class="print-table"><thead><tr>
+        <th>Date</th><th>Type</th><th>Stage</th><th>Details</th><th style="text-align:right;">Due</th><th style="text-align:right;">Rec</th>
+      </tr></thead><tbody>`;
     list.forEach(e => {
-      body += `<tr>
-        <td>${e.entry_date || ''}</td>
-        <td>${e.entry_type || ''}</td>
-        <td>${stagePill(e.stage)}</td>
+      body += `<tr><td>${e.entry_date || ''}</td><td>${e.entry_type || ''}</td><td>${stagePill(e.stage)}</td>
         <td>${e.details || ''}${e.payment_method ? ' · ' + e.payment_method : ''}</td>
         <td class="amt">${e.amount_due ? fmt(e.amount_due) : ''}</td>
-        <td class="amt">${e.amount_received ? fmt(e.amount_received) : ''}</td>
-      </tr>`;
+        <td class="amt">${e.amount_received ? fmt(e.amount_received) : ''}</td></tr>`;
     });
     body += '</tbody></table></div>';
   });
   if (!rows.length) body += '<div class="print-meta" style="text-align:center;">No entries</div>';
   body += '</div>';
-
   const area = document.getElementById('printArea');
   area.innerHTML = body;
   area.style.display = 'block';
@@ -237,7 +216,6 @@ runReport = function() {
   if (typeof selectedRows !== 'undefined') selectedRows.clear();
   const wrap = document.getElementById('reportOutput') || document.getElementById('reportContent');
   if (!wrap) return toast('Report panel missing');
-
   const groups = {};
   list.forEach(e => {
     let key = '—';
@@ -250,8 +228,7 @@ runReport = function() {
   });
   let html = '';
   Object.keys(groups).sort().forEach(k => {
-    html += `<div class="report-group report-divider">
-      <h3><strong>${k}</strong> <span style="font-size:12px;color:var(--muted);">(${groups[k].length})</span>
+    html += `<div class="report-group report-divider"><h3><strong>${k}</strong> <span style="font-size:12px;color:var(--muted);">(${groups[k].length})</span>
       <label style="font-size:11px;margin-left:8px;"><input type="checkbox" onchange="toggleGroupChecks(this)"> all</label></h3>
       <table class="lt" style="width:100%;min-width:640px;"><thead><tr>
         <th></th><th>Date</th><th>Client</th><th>Type</th><th>Stage</th><th>TM</th><th>Details</th><th>Due</th><th>Received</th>
@@ -271,14 +248,11 @@ function reportRowHTML(e) {
   return `<tr class="${e.entry_type}-row" data-id="${e.id}">
     <td><input type="checkbox" class="row-check" value="${e.id}" onchange="toggleRow('${e.id}',this.checked)"></td>
     <td class="date-cell">${e.entry_date || ''}</td>
-    <td><strong>${code}</strong></td>
-    <td>${e.entry_type}</td>
-    <td>${badge}</td>
+    <td><strong>${code}</strong></td><td>${e.entry_type}</td><td>${badge}</td>
     <td><strong>${tm}</strong></td>
     <td>${e.details || ''}${e.payment_method ? ' · ' + e.payment_method : ''}</td>
     <td class="amt-due">${e.amount_due ? fmt(e.amount_due) : ''}</td>
-    <td class="amt-rec">${e.amount_received ? fmt(e.amount_received) : ''}</td>
-  </tr>`;
+    <td class="amt-rec">${e.amount_received ? fmt(e.amount_received) : ''}</td></tr>`;
 }
 
 function toggleGroupChecks(el) {
@@ -296,13 +270,11 @@ function printSelectedA4() {
   if (!list.length) return toast('Select rows or run report first');
   printEntriesA4(list, 'Ledger_Selected_A4');
 }
-
 function printReportA4() {
   const list = window._reportRows || [];
   if (!list.length) return toast('Run report first');
   printEntriesA4(list, 'Ledger_Report_A4');
 }
-
 function printEntriesA4(list, title) {
   const byClient = {};
   (list || []).forEach(e => {
@@ -312,7 +284,6 @@ function printEntriesA4(list, title) {
     if (!byClient[ck][tk]) byClient[ck][tk] = [];
     byClient[ck][tk].push(e);
   });
-
   let body = `<div class="ack-sheet">${printBrandHeader('LEDGER EXPORT · A4')}`;
   Object.keys(byClient).sort().forEach(ck => {
     body += `<div class="print-group"><div class="print-group-title">CLIENT</div><div class="print-big">${ck}</div>`;
@@ -324,12 +295,9 @@ function printEntriesA4(list, title) {
           <th>Date</th><th>Type</th><th>Stage</th><th>Details</th><th style="text-align:right;">Due</th><th style="text-align:right;">Rec</th>
         </tr></thead><tbody>`;
       rows.forEach(e => {
-        body += `<tr>
-          <td>${e.entry_date || ''}</td><td>${e.entry_type || ''}</td><td>${stagePill(e.stage)}</td>
-          <td>${e.details || ''}</td>
-          <td class="amt">${e.amount_due ? fmt(e.amount_due) : ''}</td>
-          <td class="amt">${e.amount_received ? fmt(e.amount_received) : ''}</td>
-        </tr>`;
+        body += `<tr><td>${e.entry_date || ''}</td><td>${e.entry_type || ''}</td><td>${stagePill(e.stage)}</td>
+          <td>${e.details || ''}</td><td class="amt">${e.amount_due ? fmt(e.amount_due) : ''}</td>
+          <td class="amt">${e.amount_received ? fmt(e.amount_received) : ''}</td></tr>`;
       });
       body += '</tbody></table>';
     });
@@ -337,7 +305,6 @@ function printEntriesA4(list, title) {
   });
   if (!(list || []).length) body += '<div class="print-meta" style="text-align:center;">No rows</div>';
   body += '</div>';
-
   const area = document.getElementById('printArea');
   area.innerHTML = body;
   area.style.display = 'block';
@@ -345,4 +312,4 @@ function printEntriesA4(list, title) {
   setTimeout(() => { window.print(); area.style.display = 'none'; area.innerHTML = ''; document.title = 'Brandex Law Associates — Client Ledger'; }, 200);
 }
 
-console.log('Brandex gaps-print v7 loaded (ack multi-pay status)');
+console.log('Brandex gaps-print v8 loaded (one-page dual ack)');
