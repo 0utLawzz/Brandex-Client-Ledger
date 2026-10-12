@@ -48,7 +48,6 @@
   <div class="nb-nav">
     <div class="ni active" data-page="dashboard">Dashboard</div>
     <div class="ni" data-page="clients">Clients</div>
-    <div class="ni" data-page="actions">Actions</div>
     <div class="ni" data-page="reports">Reports</div>
     <button class="btn sm" id="signOutButton" type="button" onclick="signOutLedger()" style="display:none;">SIGN OUT</button>
   </div>
@@ -81,7 +80,8 @@
       </section>
     </div>
     <div class="tb no-print">
-      <button class="btn prim" onclick="showPage('actions')">+ Add Record / Receiving</button>
+      <button class="btn prim" onclick="openChargeModal()">+ Charge</button>
+      <button class="btn ok" onclick="openReceivingModal()">+ Payment</button>
       <button class="btn" onclick="showPage('clients')">View Clients</button>
       <button class="btn" onclick="loadDashboard()">Refresh</button>
     </div>
@@ -102,6 +102,7 @@
       <input class="fi" id="clientSearch" placeholder="Search code, name, city, phone…" oninput="renderClients()" style="max-width:280px;">
       <select class="fsel" id="seriesFilter" onchange="renderClients()" style="max-width:160px;"><option value="">All Series</option></select>
       <button class="btn prim" onclick="openClientModal()">+ New Client</button>
+      <button class="btn" onclick="openSeriesModal()">+ New Series</button>
     </div>
     <div id="clientsGrid" class="clients-grid"></div>
   </div>
@@ -151,7 +152,8 @@
     <div class="tb lh-actions no-print">
       <button class="btn" onclick="showPage('clients')">← Back</button>
       <select class="fsel" id="ledgerCaseFilter" onchange="filterLedgerByCase()" style="max-width:200px;"><option value="">All Cases / TM</option></select>
-      <button class="btn" onclick="toggleCurrentView()">Current View</button>
+      <button class="btn" onclick="printSelectedClientEntries()">Print Selected</button>
+      <button class="btn del" onclick="voidSelectedEntries()">Delete Selected</button>
       <button class="btn" onclick="openEditCaseModal()">Edit TM / App</button>
       <button class="btn prim" onclick="openChargeModal(currentClientId)">+ Charge</button>
       <button class="btn ok" onclick="openReceivingModal(currentClientId)">+ Receiving</button>
@@ -179,7 +181,7 @@
     <section id="stageOutstanding" class="stage-outstanding" aria-live="polite"></section>
     <div class="ledger-page">
       <div id="tmPaymentStatus" style="display:none;padding:12px 12px 0;"></div>
-      <div style="overflow-x:auto;min-height:80px;"><table class="lt" id="clientLedgerTable" style="width:100%;min-width:700px;"><thead><tr><th>Date</th><th>Type</th><th>Stage</th><th>TM / Folder</th><th>Details</th><th>Due</th><th>Received</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+      <div style="overflow-x:auto;min-height:80px;"><table class="lt" id="clientLedgerTable" style="width:100%;min-width:860px;"><thead><tr><th><input id="selectAllLedgerEntries" type="checkbox" aria-label="Select all ledger entries"></th><th>Date</th><th>Type</th><th>Stage</th><th>TM / Folder</th><th>Application Name</th><th>Details</th><th>Due</th><th>Received</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
     </div>
   </div>
 </main>

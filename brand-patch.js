@@ -957,3 +957,139 @@
 
   console.log('Brandex brand-patch v6 loaded (small logo + banks)');
 })();
+
+// Client-first ledger controls: selection, compact balances, series creation, and interaction polish.
+(function () {
+  var selectedLedgerEntries = new Set();
+
+  function escape(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function (ch) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+    });
+  }
+
+  window.toggleLedgerEntrySelection = function (id, checked) {
+    if (checked) selectedLedgerEntries.add(id); else selectedLedgerEntries.delete(id);
+    var all = document.getElementById('selectAllLedgerEntries');
+    if (all) all.checked = document.querySelectorAll('.ledger-entry-check:not(:disabled):not(:checked)').length === 0;
+  };
+
+  window.printSelectedClientEntries = function () {
+    if (!selectedLedgerEntries.size) return toast('SELECT ONE OR MORE ENTRIES TO PRINT');
+    var selected = (window._ledgerRows || []).filter(function (entry) { return selectedLedgerEntries.has(entry.id); });
+    if (!selected.length) return toast('SELECTED ENTRIES ARE NOT IN THIS VIEW');
+    var previous = window._ledgerRows;
+    window._ledgerRows = selected;
+    printLedgerA4();
+    window._ledgerRows = previous;
+  };
+
+  window.voidSelectedEntries = async function () {
+    var ids = Array.from(selectedLedgerEntries);
+    if (!ids.length) return toast('SELECT ONE OR MORE ENTRIES FIRST');
+    if (!confirm('DELETE ' + ids.length + ' SELECTED ENTR' + (ids.length === 1 ? 'Y' : 'IES') + '? THEY WILL BE VOIDED, NOT PERMANENTLY ERASED.')) return;
+    if (!sb) return toast('SUPABASE REQUIRED');
+    var result = await sb.from('ledger_entries')
+      .update({ voided_at: new Date().toISOString(), void_reason: 'BULK DELETED FROM LEDGER' })
+      .in('id', ids)
+      .is('voided_at', null);
+    if (result.error) return toast(result.error.message.toUpperCase());
+    selectedLedgerEntries.clear();
+    await loadEntries();
+    await loadDashboard();
+    if (currentClientId) await openClientLedger(currentClientId);
+    toast(ids.length + ' ENTR' + (ids.length === 1 ? 'Y VOIDED' : 'IES VOIDED'));
+  };
+
+  window.openSeriesModal = function () {
+    var modal = document.getElementById('modalSeries');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'modalSeries';
+      modal.className = 'mo';
+      modal.innerHTML = '<form class="mbox" id="seriesForm"><div class="mh"><div class="mt">NEW SERIES</div><button class="mc-btn" type="button" data-close-series>×</button></div>' +
+        '<div class="mb"><div class="fg"><div class="fgroup"><label class="flbl" for="seriesCode">SERIES CODE *</label><input class="fi" id="seriesCode" maxlength="12" required placeholder="A"></div>' +
+        '<div class="fgroup"><label class="flbl" for="seriesName">SERIES NAME *</label><input class="fi" id="seriesName" required placeholder="A-SERIES"></div></div></div>' +
+        '<div class="mf"><button class="btn" type="button" data-close-series>CANCEL</button><button class="btn prim" type="submit">CREATE SERIES</button></div></form>';
+      document.body.appendChild(modal);
+      modal.addEventListener('click', function (event) {
+        if (event.target === modal || event.target.closest('[data-close-series]')) modal.classList.remove('open');
+      });
+      modal.querySelector('#seriesForm').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        if (!sb) return toast('SUPABASE REQUIRED');
+        var code = document.getElementById('seriesCode').value.trim().toUpperCase();
+        var name = document.getElementById('seriesName').value.trim().toUpperCase();
+        if (!code || !name) return toast('SERIES CODE AND NAME ARE REQUIRED');
+        var highest = (mem.series || []).reduce(function (max, row) { return Math.max(max, Number(row.sort_order || 0)); }, 0);
+        var insert = await sb.from('series').insert({ code: code, name: name, prefix: code + '-', sort_order: highest + 10 }).select().single();
+        if (insert.error) return toast(insert.error.message.toUpperCase());
+        await loadSeries();
+        document.getElementById('cSeries').value = insert.data.id;
+        modal.classList.remove('open');
+        toast('SERIES CREATED');
+      });
+    }
+    document.getElementById('seriesCode').value = '';
+    document.getElementById('seriesName').value = '';
+    modal.classList.add('open');
+  };
+
+  window.renderClientEntries = function (rows) {
+    var tbody = document.querySelector('#clientLedgerTable tbody');
+    if (!tbody) return;
+    var list = (rows || []).slice().sort(function (a, b) {
+      return String(b.entry_date || '').localeCompare(String(a.entry_date || '')) || String(b.created_at || '').localeCompare(String(a.created_at || ''));
+    });
+    tbody.innerHTML = list.map(function (entry) {
+      var voided = !!entry.voided_at;
+      var tm = entry.cases && (entry.cases.tm_no || entry.cases.folder_no) || '—';
+      var app = entry.cases && entry.cases.application_name || '—';
+      var actions = voided ? '<span class="case-status">VOIDED</span>' :
+        '<button class="btn sm" data-action="edit" data-entry="' + escape(entry.id) + '">EDIT</button> ' +
+        '<button class="btn sm del" data-action="void" data-entry="' + escape(entry.id) + '">VOID</button> ' +
+        '<button class="btn sm" data-action="print" data-entry="' + escape(entry.id) + '">PRINT</button>';
+      return '<tr class="' + escape(entry.entry_type) + '-row"' + (voided ? ' style="opacity:.45;text-decoration:line-through;"' : '') + '>' +
+        '<td><input class="ledger-entry-check" type="checkbox" value="' + escape(entry.id) + '"' + (voided ? ' disabled' : '') + ' onchange="toggleLedgerEntrySelection(this.value,this.checked)"></td>' +
+        '<td class="date-cell">' + escape(entry.entry_date || '') + '</td>' +
+        '<td><span class="entry-kind ' + escape(entry.entry_type) + '">' + (voided ? 'VOID · ' : '') + (entry.entry_type === 'receiving' ? 'PAYMENT' : 'CHARGE') + '</span></td>' +
+        '<td>' + stageBadge(entry.stage) + '</td><td class="folder-no"><strong>' + escape(tm) + '</strong></td>' +
+        '<td class="application-cell">' + escape(app) + '</td>' +
+        '<td>' + escape(entry.details || '') + (entry.payment_method ? ' · ' + escape(entry.payment_method) : '') + '</td>' +
+        '<td class="amt-due">' + (entry.amount_due ? fmt(entry.amount_due) : '') + '</td><td class="amt-rec">' + (entry.amount_received ? fmt(entry.amount_received) : '') + '</td>' +
+        '<td class="no-print">' + actions + '</td></tr>';
+    }).join('');
+    if (!list.length) tbody.innerHTML = '<tr><td colspan="10" class="empty">NO ENTRIES MATCH THESE FILTERS</td></tr>';
+  };
+
+  var selectAll = document.getElementById('selectAllLedgerEntries');
+  if (selectAll) selectAll.addEventListener('change', function () {
+    document.querySelectorAll('.ledger-entry-check:not(:disabled)').forEach(function (box) {
+      box.checked = selectAll.checked;
+      window.toggleLedgerEntrySelection(box.value, box.checked);
+    });
+  });
+
+  document.addEventListener('input', function (event) {
+    var field = event.target;
+    if (!field || !/^(INPUT|TEXTAREA)$/.test(field.tagName) || /^(password|date|number)$/i.test(field.type || '')) return;
+    var start = field.selectionStart, end = field.selectionEnd;
+    field.value = field.value.toUpperCase();
+    if (typeof start === 'number' && typeof end === 'number') field.setSelectionRange(start, end);
+  }, true);
+
+  document.addEventListener('pointerup', function (event) {
+    if (!event.target.closest('button,.ni,.client-card')) return;
+    try {
+      var Context = window.AudioContext || window.webkitAudioContext;
+      if (!Context) return;
+      var context = new Context();
+      var oscillator = context.createOscillator(), gain = context.createGain();
+      oscillator.frequency.value = 520;
+      gain.gain.setValueAtTime(0.025, context.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.05);
+      oscillator.connect(gain).connect(context.destination);
+      oscillator.start(); oscillator.stop(context.currentTime + 0.05);
+    } catch (_) { /* Sound is optional. */ }
+  });
+})();

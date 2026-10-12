@@ -152,7 +152,7 @@ function printLedgerA4() {
     <div class="print-group">
       <div class="print-group-title">CLIENT</div>
       <div class="print-big">${series ? series + ' · ' : ''}${c.client_code || '—'}</div>
-      <div class="print-big-sub">${c.client_name || '—'}</div>
+      <div class="print-big print-client-name">${c.client_name || '—'}</div>
       <div class="print-meta">Phone: ${c.phone || '—'} · Email: ${c.email || '—'} · City: ${c.city || '—'}</div>
     </div>`;
 
@@ -164,13 +164,14 @@ function printLedgerA4() {
       <div class="print-pills">${tmPill(tmKey === 'General / No TM' ? null : tmKey)} ${stageSet.map(stagePill).join(' ')}</div>
       <table class="print-table">
         <thead><tr>
-          <th>Date</th><th>Type</th><th>Stage</th><th>Details</th><th style="text-align:right;">Due</th><th style="text-align:right;">Rec</th>
+          <th>Date</th><th>Type</th><th>Stage</th><th>Application</th><th>Details</th><th style="text-align:right;">Due</th><th style="text-align:right;">Rec</th>
         </tr></thead><tbody>`;
     list.forEach(e => {
       body += `<tr>
         <td>${e.entry_date || ''}</td>
         <td><span class="entry-kind ${e.entry_type || ''}">${e.entry_type === 'receiving' ? 'RECEIVING' : 'CHARGE'}</span></td>
         <td>${stagePill(e.stage)}</td>
+        <td>${e.cases?.application_name || '—'}</td>
         <td>${e.details || ''}${e.payment_method ? ' · ' + e.payment_method : ''}</td>
         <td class="amt">${e.amount_due ? fmt(e.amount_due) : ''}</td>
         <td class="amt">${e.amount_received ? fmt(e.amount_received) : ''}</td>
