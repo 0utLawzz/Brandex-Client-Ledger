@@ -364,6 +364,7 @@
 
   document.addEventListener('input', function (event) {
     var field = event.target;
+    if (field && (field.id === 'authEmail' || field.id === 'authPassword')) return;
     if (field && field.matches && field.matches('input:not([type]), input[type="text"], input[type="search"], input[type="email"], input[type="tel"], input[type="url"], textarea')) {
       var start = field.selectionStart;
       var end = field.selectionEnd;
@@ -1072,6 +1073,7 @@
 
   document.addEventListener('input', function (event) {
     var field = event.target;
+    if (field && (field.id === 'authEmail' || field.id === 'authPassword')) return;
     if (!field || !/^(INPUT|TEXTAREA)$/.test(field.tagName) || /^(password|date|number)$/i.test(field.type || '')) return;
     var start = field.selectionStart, end = field.selectionEnd;
     field.value = field.value.toUpperCase();

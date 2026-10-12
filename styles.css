@@ -195,6 +195,8 @@ body{font-family:'Space Grotesk',Arial,sans-serif;background:var(--bg);color:var
 .auth-card h1{font:32px 'Bebas Neue',sans-serif;}
 .auth-card p{font:11px 'DM Mono',monospace;color:var(--muted);}
 #authMessage{min-height:1.3em;color:var(--danger);}
+.auth-case-note{line-height:1.45!important;color:var(--muted)!important;}
+.auth-card #authEmail,.auth-card #authPassword{text-transform:none;}
 .ack-logo{width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #0C0C0C;background:#0C0C0C;}
 .ack-title-bar{text-align:center;font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;margin:12px 0;padding:8px;background:#C94A00;color:#FAF6EE;border:2px solid #0C0C0C;}
 

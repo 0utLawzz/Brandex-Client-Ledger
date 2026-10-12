@@ -201,9 +201,10 @@
     <h1 id="authTitle">STAFF SIGN IN</h1>
     <p>USE YOUR BRANDEX LEDGER STAFF ACCOUNT.</p>
     <label class="flbl" for="authEmail">EMAIL</label>
-    <input class="fi" id="authEmail" type="email" autocomplete="username" required>
+    <input class="fi" id="authEmail" type="email" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
     <label class="flbl" for="authPassword">PASSWORD</label>
-    <input class="fi" id="authPassword" type="password" autocomplete="current-password" required>
+    <input class="fi" id="authPassword" type="password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" required>
+    <p class="auth-case-note">EMAIL AND PASSWORD KEEP THE EXACT CASE YOU TYPE. PASSWORDS ARE CASE-SENSITIVE.</p>
     <button class="btn prim" type="submit">SIGN IN</button>
     <p id="authMessage" role="status"></p>
   </form>
