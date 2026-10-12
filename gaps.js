@@ -319,7 +319,7 @@ renderClientEntries = function(rows) {
 async function voidEntry(id) {
   if (!confirm('Void this entry?')) return;
   if (!sb) return toast('Supabase required');
-  const reason = prompt('Void reason (optional)') || 'voided';
+  const reason = (prompt('Void reason (optional)') || 'VOIDED').toUpperCase();
   const { error } = await sb.from('ledger_entries').update({ voided_at: new Date().toISOString(), void_reason: reason }).eq('id', id);
   if (error) return toast(error.message + ' — run migration 002');
   toast('Entry voided');

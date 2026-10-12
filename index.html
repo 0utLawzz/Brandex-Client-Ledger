@@ -50,6 +50,7 @@
     <div class="ni" data-page="clients">Clients</div>
     <div class="ni" data-page="actions">Actions</div>
     <div class="ni" data-page="reports">Reports</div>
+    <button class="btn sm" id="signOutButton" type="button" onclick="signOutLedger()" style="display:none;">SIGN OUT</button>
   </div>
   <div class="nb-stats">
     <div class="nb-stat"><strong id="navClients">—</strong>Clients</div>
@@ -60,11 +61,24 @@
 <main class="main">
   <div class="page active" id="page-dashboard">
     <div class="ph"><div class="ph-title">Dashboard</div><div class="ph-sub">Live payment & case statistics</div></div>
-    <div class="sg">
+    <div class="sg dashboard-kpis">
       <div class="sc b"><div class="sc-lbl">Clients</div><div class="sc-val" id="statClients">0</div><div class="sc-sub">Active accounts</div></div>
       <div class="sc g"><div class="sc-lbl">Total Received</div><div class="sc-val" id="statReceived">0</div><div class="sc-sub">PKR</div></div>
       <div class="sc y"><div class="sc-lbl">Outstanding</div><div class="sc-val" id="statOutstanding">0</div><div class="sc-sub">PKR</div></div>
       <div class="sc t"><div class="sc-lbl">Entries</div><div class="sc-val" id="statEntries">0</div><div class="sc-sub">All time</div></div>
+      <div class="sc b"><div class="sc-lbl">Today</div><div class="sc-val" id="statToday">0</div><div class="sc-sub">Entries posted today</div></div>
+    </div>
+    <div class="dashboard-charts">
+      <section class="chart-card" aria-labelledby="monthlyChartTitle">
+        <h2 class="chart-title" id="monthlyChartTitle">MONTHLY CHARGES & RECEIVINGS</h2>
+        <div class="chart-legend" aria-hidden="true">
+          <span><i class="chart-swatch charge"></i>CHARGES</span>
+          <span><i class="chart-swatch receiving"></i>RECEIVINGS</span>
+        </div>
+        <div id="monthlyChart" class="monthly-chart" role="img" aria-label="MONTHLY CHARGES AND RECEIVINGS FOR THE LAST SIX MONTHS">
+          <div class="chart-empty">CHART WILL APPEAR WHEN LEDGER DATA LOADS</div>
+        </div>
+      </section>
     </div>
     <div class="tb no-print">
       <button class="btn prim" onclick="showPage('actions')">+ Add Record / Receiving</button>
@@ -111,7 +125,13 @@
   <div class="page" id="page-reports">
     <div class="ph"><div class="ph-title">Reports</div><div class="ph-sub">Filter · Group · Export A4</div></div>
     <div class="tb">
+      <input class="fi" id="reportSearch" placeholder="SEARCH CLIENT, CASE, TM, DETAILS" style="max-width:260px;">
       <select class="fsel" id="reportClient" style="max-width:220px;"><option value="">All Clients</option></select>
+      <select class="fsel" id="reportStage" style="max-width:140px;">
+        <option value="">All Stages</option><option value="S1">Stage 1</option><option value="S2">Stage 2</option><option value="S3">Stage 3</option><option value="S4">Stage 4</option>
+      </select>
+      <input class="fi" id="reportFrom" type="date" aria-label="Report start date" style="max-width:160px;">
+      <input class="fi" id="reportTo" type="date" aria-label="Report end date" style="max-width:160px;">
       <select class="fsel" id="reportGroup" style="max-width:140px;">
         <option value="client">By Client</option>
         <option value="case">By Case / TM</option>
@@ -137,6 +157,26 @@
       <button class="btn ok" onclick="openReceivingModal(currentClientId)">+ Receiving</button>
       <button class="btn" onclick="printLedgerA4()">Print Ledger A4</button>
     </div>
+    <section class="ledger-page case-list-panel" aria-labelledby="caseListTitle">
+      <div class="ledger-header case-list-header">
+        <strong id="caseListTitle">CASES & FOLDERS</strong>
+        <div class="case-filters">
+          <input class="fi" id="caseSearch" type="search" placeholder="SEARCH TM / FOLDER / APPLICATION">
+          <select class="fsel" id="caseStageFilter" aria-label="Filter cases by stage">
+            <option value="">ALL STAGES</option><option value="S1">S1</option><option value="S2">S2</option><option value="S3">S3</option><option value="S4">S4</option>
+          </select>
+          <select class="fsel" id="caseStatusFilter" aria-label="Filter cases by payment status">
+            <option value="">ALL STATUS</option><option value="OUTSTANDING">OUTSTANDING</option><option value="CLEARED">CLEARED</option>
+          </select>
+          <input class="fi" id="ledgerDateFrom" type="date" aria-label="Filter ledger from date">
+          <input class="fi" id="ledgerDateTo" type="date" aria-label="Filter ledger to date">
+        </div>
+      </div>
+      <div class="case-list-scroll">
+        <table class="lt case-list-table"><thead><tr><th>CASE / TM</th><th>FOLDER</th><th>APPLICATION</th><th>STAGE STATUS</th><th>OUTSTANDING</th><th></th></tr></thead><tbody id="clientCaseTableBody"></tbody></table>
+      </div>
+    </section>
+    <section id="stageOutstanding" class="stage-outstanding" aria-live="polite"></section>
     <div class="ledger-page">
       <div id="tmPaymentStatus" style="display:none;padding:12px 12px 0;"></div>
       <div style="overflow-x:auto;min-height:80px;"><table class="lt" id="clientLedgerTable" style="width:100%;min-width:700px;"><thead><tr><th>Date</th><th>Type</th><th>Stage</th><th>TM / Folder</th><th>Details</th><th>Due</th><th>Received</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
@@ -154,6 +194,18 @@
 
 <div id="printArea"></div>
 <div class="toast" id="toast"></div>
+<section class="auth-gate" id="authGate" aria-labelledby="authTitle">
+  <form class="auth-card" id="authForm">
+    <h1 id="authTitle">STAFF SIGN IN</h1>
+    <p>USE YOUR BRANDEX LEDGER STAFF ACCOUNT.</p>
+    <label class="flbl" for="authEmail">EMAIL</label>
+    <input class="fi" id="authEmail" type="email" autocomplete="username" required>
+    <label class="flbl" for="authPassword">PASSWORD</label>
+    <input class="fi" id="authPassword" type="password" autocomplete="current-password" required>
+    <button class="btn prim" type="submit">SIGN IN</button>
+    <p id="authMessage" role="status"></p>
+  </form>
+</section>
 <script src="app.js"></script>
 <script src="gaps.js"></script>
 <script src="gaps-print.js"></script>

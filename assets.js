@@ -13,3 +13,19 @@ window.BRANDEX_ASSETS = window.BRANDEX_ASSETS || {};
   A.favicon = A.favicon || 'assets/favicon.png';
   A.logoLockup = A.logoLockup || 'assets/logo-lockup.png';
 })();
+
+(function () {
+  function loadPhaseTwo() {
+    if (document.getElementById('brandex-phase2-script')) return;
+    var stylesheet = document.createElement('link');
+    stylesheet.rel = 'stylesheet';
+    stylesheet.href = 'phase2.css';
+    document.head.appendChild(stylesheet);
+    var script = document.createElement('script');
+    script.id = 'brandex-phase2-script';
+    script.src = 'phase2.js';
+    document.body.appendChild(script);
+  }
+  if (document.readyState === 'complete') loadPhaseTwo();
+  else window.addEventListener('load', loadPhaseTwo, { once: true });
+})();

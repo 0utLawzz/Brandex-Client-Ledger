@@ -71,7 +71,8 @@ document.querySelectorAll('.ni').forEach(ni => {
 
 async function loadSeries() {
   if (sb) {
-    const { data } = await sb.from('series').select('*').order('sort_order');
+    const { data, error } = await sb.from('series').select('*').order('sort_order');
+    if (error) return toast('Could not load series: ' + error.message);
     if (data) mem.series = data;
   }
   const sel = document.getElementById('seriesFilter');
@@ -88,7 +89,8 @@ async function loadSeries() {
 
 async function loadClients() {
   if (sb) {
-    const { data } = await sb.from('clients').select('*, series(code), client_stage_rates(*)').order('client_code');
+    const { data, error } = await sb.from('clients').select('*, series(code), client_stage_rates(*)').order('client_code');
+    if (error) return toast('Could not load clients: ' + error.message);
     if (data) {
       mem.clients = data;
       mem.rates = {};
@@ -102,10 +104,11 @@ async function loadClients() {
 
 async function loadEntries() {
   if (sb) {
-    const { data } = await sb.from('ledger_entries')
+    const { data, error } = await sb.from('ledger_entries')
       .select('*, clients(client_code, client_name), cases(tm_no, folder_no, application_name)')
       .order('entry_date', { ascending: false })
       .order('created_at', { ascending: false });
+    if (error) return toast('Could not load ledger entries: ' + error.message);
     if (data) mem.entries = data;
   }
 }
@@ -454,7 +457,7 @@ function printReceipt(entry) {
   const w = window.open('', '_blank', 'width=480,height=640');
   w.document.write(`<html><head><title>Receipt ${entry.receipt_no}</title>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono&family=Space+Grotesk&display=swap" rel="stylesheet">
-    <style>body{font-family:'Space Grotesk',sans-serif;padding:20px;background:#F0E8D0;}
+    <style>body{font-family:'Space Grotesk',sans-serif;padding:20px;background:#F0E8D0;text-transform:uppercase;}
     .receipt-box{max-width:420px;margin:0 auto;border:3px solid #0C0C0C;padding:24px;background:#fff;}
     .receipt-box h1{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;text-align:center;margin-bottom:4px;}
     .sub{text-align:center;font-family:'DM Mono',monospace;font-size:10px;color:#555;margin-bottom:16px;}
@@ -504,8 +507,9 @@ function exportCSV(selectedOnly) {
   let list = mem.entries;
   if (selectedOnly) list = list.filter(e => selectedRows.has(e.id));
   if (!list.length) return toast('Nothing to export');
-  const header = ['Date','Client','Type','Stage','TM','Details','Amount Due','Amount Received','Receipt No'];
-  const rows = list.map(e => [e.entry_date||'', e.clients?.client_code||'', e.entry_type, e.stage||'', e.cases?.tm_no||'', (e.details||'').replace(/,/g,' '), e.amount_due||'', e.amount_received||'', e.receipt_no||'']);
+  const header = ['Date','Client','Type','Stage','TM','Details','Amount Due','Amount Received','Receipt No'].map(value => value.toUpperCase());
+  const rows = list.map(e => [e.entry_date||'', e.clients?.client_code||'', e.entry_type, e.stage||'', e.cases?.tm_no||'', (e.details||'').replace(/,/g,' '), e.amount_due||'', e.amount_received||'', e.receipt_no||'']
+    .map(value => typeof value === 'string' ? value.toUpperCase() : value));
   const csv = [header, ...rows].map(r => r.join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const a = document.createElement('a');
