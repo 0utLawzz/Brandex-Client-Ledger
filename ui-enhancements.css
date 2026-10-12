@@ -1,0 +1,472 @@
+/* =========================================================
+   BRANDEX UI POLISH v1
+   Layout-only refinements. Keeps the locked Brandex palette,
+   typography, hard-shadow style, and all existing app logic.
+   ========================================================= */
+
+:root {
+  --ui-content-width: 1480px;
+  --ui-radius: 0px;
+}
+
+/* Page frame and hierarchy */
+.main {
+  width: min(100%, var(--ui-content-width));
+  padding: clamp(18px, 2.2vw, 34px);
+}
+
+.ph {
+  margin-bottom: 24px;
+  padding-left: 18px;
+}
+
+.ph-title {
+  font-size: clamp(32px, 3vw, 42px);
+}
+
+.ph-sub {
+  line-height: 1.6;
+}
+
+/* Keep toolbars aligned and easy to scan */
+.tb {
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.tb > .fi,
+.tb > .fsel {
+  min-height: 42px;
+}
+
+.btn {
+  min-height: 40px;
+  line-height: 1.25;
+}
+
+.btn:focus-visible,
+.ni:focus-visible,
+.fi:focus-visible,
+.fsel:focus-visible,
+.client-card:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* Dashboard: more even KPI cards and clearer section spacing */
+.dashboard-kpis {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.dashboard-kpis .sc {
+  min-width: 0;
+  min-height: 112px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 16px;
+}
+
+.dashboard-kpis .sc-val {
+  overflow-wrap: anywhere;
+  font-size: clamp(24px, 2.2vw, 34px);
+}
+
+.dashboard-charts {
+  margin: 24px 0;
+}
+
+.chart-card {
+  padding: clamp(14px, 1.8vw, 22px);
+}
+
+.chart-title {
+  line-height: 1.2;
+}
+
+.ledger-page {
+  min-width: 0;
+}
+
+.ledger-header {
+  padding: 14px 16px;
+}
+
+#recentTable th,
+#recentTable td {
+  white-space: nowrap;
+}
+
+#recentTable td:nth-child(5) {
+  white-space: normal;
+  min-width: 180px;
+}
+
+/* Clients: consistent card sizing and more readable contact rows */
+.clients-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 285px), 1fr));
+  align-items: stretch;
+  gap: 16px;
+}
+
+.client-card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+  cursor: default;
+}
+
+.client-card .cc-top {
+  gap: 12px;
+}
+
+.client-card .cc-code,
+.client-card .cc-no {
+  overflow-wrap: anywhere;
+}
+
+.client-card .cc-name {
+  min-height: 1.4em;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.client-card .cc-row {
+  gap: 14px;
+  line-height: 1.45;
+}
+
+.client-card .cc-row span:first-child {
+  flex: 0 0 auto;
+}
+
+.client-card .cc-row span:last-child {
+  min-width: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.client-card .cc-edit {
+  margin-top: auto !important;
+}
+
+.series-banner {
+  margin-top: 6px;
+  margin-bottom: 8px;
+}
+
+/* Ledger and reports: better table density without losing data */
+.lt {
+  font-variant-numeric: tabular-nums;
+}
+
+.lt th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.lt td {
+  line-height: 1.45;
+  vertical-align: middle;
+}
+
+.lt tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.case-list-header {
+  padding: 14px 16px;
+}
+
+.case-filters {
+  align-items: center;
+}
+
+.case-list-scroll {
+  overscroll-behavior: contain;
+}
+
+#reportOutput {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+#clientLedgerTable {
+  font-variant-numeric: tabular-nums;
+}
+
+#clientLedgerTable td,
+#clientLedgerTable th {
+  padding: 11px 12px;
+}
+
+.stage-outstanding {
+  gap: 12px;
+}
+
+.stage-due-card {
+  min-width: 0;
+  line-height: 1.5;
+}
+
+/* Modals: predictable sizing on shorter screens */
+.mo {
+  overflow-y: auto;
+  align-items: flex-start;
+}
+
+.mbox {
+  margin: auto;
+}
+
+.mb {
+  padding: clamp(14px, 2vw, 22px);
+}
+
+.mf {
+  position: sticky;
+  bottom: 0;
+  background: var(--panel);
+}
+
+/* Avoid accidental horizontal page overflow */
+body,
+main,
+.page {
+  min-width: 0;
+}
+
+img,
+table {
+  max-width: 100%;
+}
+
+/* Mid-size screens */
+@media (max-width: 1100px) {
+  .navbar {
+    padding-inline: 16px;
+  }
+
+  .nb-nav {
+    justify-content: flex-start;
+  }
+
+  .ni {
+    padding-inline: 11px;
+  }
+
+  .nb-stats {
+    gap: 10px;
+  }
+
+  .dashboard-kpis {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .case-list-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .case-filters {
+    max-width: none;
+    flex-wrap: wrap;
+  }
+
+  .case-filters > * {
+    flex: 1 1 145px;
+  }
+}
+
+/* Tablets and phones */
+@media (max-width: 768px) {
+  .main {
+    padding: 18px 14px 28px;
+  }
+
+  .ph {
+    margin-bottom: 18px;
+    padding-left: 12px;
+    border-left-width: 6px;
+  }
+
+  .ph-title {
+    font-size: 32px;
+    line-height: 1;
+  }
+
+  .ph-sub {
+    font-size: 10px;
+  }
+
+  .tb {
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .tb > .fi,
+  .tb > .fsel {
+    max-width: none !important;
+    flex: 1 1 190px;
+    min-width: 0;
+  }
+
+  .tb > .btn {
+    flex: 0 1 auto;
+  }
+
+  .dashboard-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .dashboard-kpis .sc {
+    min-height: 100px;
+    padding: 13px;
+  }
+
+  .dashboard-kpis .sc-val {
+    font-size: clamp(22px, 6vw, 30px);
+  }
+
+  .clients-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .client-card {
+    padding: 14px;
+  }
+
+  .client-card .cc-row {
+    font-size: 11px;
+    gap: 8px;
+  }
+
+  .dashboard-charts {
+    margin: 18px 0;
+  }
+
+  .monthly-chart {
+    grid-template-columns: repeat(6, minmax(38px, 1fr));
+  }
+
+  .lt th,
+  .lt td {
+    padding: 9px 10px;
+  }
+
+  .mo {
+    padding: 12px;
+  }
+
+  .mbox {
+    max-height: calc(100dvh - 24px);
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar {
+    padding: 8px 10px 0;
+  }
+
+  .nb-brand {
+    gap: 8px;
+  }
+
+  .nb-logo {
+    width: 34px;
+    height: 34px;
+  }
+
+  .nb-brand-text {
+    font-size: 19px;
+  }
+
+  .nb-nav {
+    margin-inline: -10px;
+    padding-inline: 6px;
+  }
+
+  .ni {
+    height: 42px;
+    padding-inline: 10px;
+    font-size: 9px;
+  }
+
+  .main {
+    padding: 16px 10px 24px;
+  }
+
+  .dashboard-kpis {
+    gap: 10px;
+  }
+
+  .dashboard-kpis .sc {
+    padding: 11px;
+    box-shadow: 3px 3px 0 var(--black);
+  }
+
+  .dashboard-kpis .sc.g {
+    box-shadow: 3px 3px 0 var(--accent2);
+  }
+
+  .dashboard-kpis .sc.y {
+    box-shadow: 3px 3px 0 var(--accent3);
+  }
+
+  .dashboard-kpis .sc.t {
+    box-shadow: 3px 3px 0 var(--accent);
+  }
+
+  .sc-lbl,
+  .sc-sub {
+    font-size: 9px;
+  }
+
+  .clients-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .client-card {
+    padding: 16px;
+  }
+
+  .stage-outstanding {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .monthly-chart {
+    gap: 3px;
+  }
+
+  .chart-bars {
+    gap: 3px;
+  }
+
+  .chart-month {
+    font-size: 8px;
+  }
+
+  .mf {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .mf .btn {
+    flex: 1 1 120px;
+  }
+}
+
+/* Print output continues to use the existing print rules and templates. */
+@media print {
+  .ui-polish-only {
+    display: none !important;
+  }
+}
