@@ -39,6 +39,11 @@ const BRAND = {
 };
 function isActiveEntry(e) { return !e.voided_at; }
 function activeEntries(list) { return (list || []).filter(isActiveEntry); }
+// Escape display text used by the client directory. Calculations stay unchanged.
+function clientDisplayText(value) {
+  return String(value == null ? '' : value).replace(/[&<>"']/g, ch =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+}
 
 function onPaymentMethodChange() {
   const m = document.getElementById('rcMethod')?.value;
@@ -170,7 +175,7 @@ renderClients = function() {
     (c.email || '').toLowerCase().includes(q)
   );
   if (!list.length) {
-    grid.innerHTML = '<div class="empty">No clients yet. Click + New Client to start.</div>';
+    grid.innerHTML = '<div class="empty">' + (mem.clients.length ? 'No clients match these filters. Try another search or series.' : 'No clients yet. Click + New Client to start.') + '</div>';
     return;
   }
   const bySeries = {};
@@ -182,7 +187,7 @@ renderClients = function() {
   });
   Object.keys(bySeries).sort().forEach(sc => {
     const g = bySeries[sc];
-    grid.innerHTML += `<div style="grid-column:1/-1;margin-top:8px;"><div class="series-banner">${sc}</div><div style="font-family:DM Mono,monospace;font-size:11px;color:var(--muted);margin-bottom:8px;">${g.name} SERIES</div></div>`;
+    grid.innerHTML += `<div class="series-heading"><div class="series-banner">${clientDisplayText(sc)}</div><div class="series-heading-copy"><strong>${clientDisplayText(g.name)}</strong><span>${g.items.length} ${g.items.length === 1 ? 'account' : 'accounts'} in this view</span></div><span class="series-heading-rule" aria-hidden="true"></span></div>`;
     g.items.forEach(c => {
       let due = 0, rec = 0;
       activeEntries(mem.entries).filter(e => e.client_id === c.id).forEach(e => {
@@ -191,16 +196,25 @@ renderClients = function() {
       });
       const bal = Number(c.header_balance || 0) + due - rec;
       const balCls = bal > 0 ? 'neg' : bal < 0 ? 'pos' : '';
+      const clientEntries = activeEntries(mem.entries).filter(e => e.client_id === c.id);
+      const caseCount = new Set([
+        ...clientEntries.map(e => e.case_id).filter(Boolean),
+        ...(mem.cases || []).filter(item => item.client_id === c.id).map(item => item.id)
+      ]).size;
+      const balanceLabel = bal > 0 ? 'Outstanding' : bal < 0 ? 'Credit balance' : 'Settled balance';
       grid.innerHTML += `
-        <div class="client-card" onclick="openClientLedger('${c.id}')">
-          <div class="cc-top"><div class="cc-no">${c.client_code}</div><div class="cc-series">${sc}</div></div>
-          <div class="cc-name">${c.client_name || '—'}</div>
-          <div class="cc-divider"></div>
-          <div class="cc-row"><span>City</span><span>${c.city || '—'}</span></div>
-          <div class="cc-row"><span>Phone</span><span>${c.phone || '—'}</span></div>
-          <div class="cc-row"><span>Email</span><span>${c.email || '—'}</span></div>
-          <div class="cc-row"><span>Balance</span><span class="cc-bal ${balCls}">${fmt(bal)}</span></div>
-        </div>`;
+        <article class="client-card" onclick="openClientLedger('${clientDisplayText(c.id)}')" aria-label="${clientDisplayText(c.client_code)} client account">
+          <div class="cc-top"><span class="cc-no">${clientDisplayText(c.client_code)}</span><span class="cc-series">${clientDisplayText(sc)} series</span></div>
+          <h2 class="cc-name">${clientDisplayText(c.client_name || 'Unnamed client')}</h2>
+          <div class="cc-context"><span>${caseCount} ${caseCount === 1 ? 'case' : 'cases'}</span><span>${clientEntries.length} active ${clientEntries.length === 1 ? 'entry' : 'entries'}</span></div>
+          <dl class="cc-contact">
+            <div class="cc-row"><dt>City</dt><dd>${clientDisplayText(c.city || 'Not provided')}</dd></div>
+            <div class="cc-row"><dt>Phone</dt><dd>${clientDisplayText(c.phone || 'Not provided')}</dd></div>
+            <div class="cc-row"><dt>Email</dt><dd>${clientDisplayText(c.email || 'Not provided')}</dd></div>
+          </dl>
+          <div class="cc-balance ${balCls}"><span class="cc-balance-label">${balanceLabel}</span><div><span class="currency">PKR</span><strong class="cc-bal">${fmt(bal)}</strong></div></div>
+          <div class="cc-footer"><button class="btn cc-open" type="button" onclick="event.stopPropagation();openClientLedger('${clientDisplayText(c.id)}')" aria-label="Open ledger for ${clientDisplayText(c.client_code)}">Open ledger <span aria-hidden="true">↗</span></button></div>
+        </article>`;
     });
   });
 };

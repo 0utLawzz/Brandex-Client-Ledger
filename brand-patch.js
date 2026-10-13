@@ -138,9 +138,9 @@
         var edit = document.createElement('button');
         edit.className = 'btn sm cc-edit';
         edit.textContent = 'Edit';
-        edit.style.cssText = 'margin-top:8px;width:100%;';
+        edit.setAttribute('aria-label', 'Edit client ' + (card.querySelector('.cc-no') || card.querySelector('.cc-code')).textContent);
         edit.onclick = function (ev) { ev.stopPropagation(); openClientModal(id); };
-        card.appendChild(edit);
+        (card.querySelector('.cc-footer') || card).appendChild(edit);
       });
     };
   }
@@ -159,14 +159,17 @@
     });
     var bal = Number(c.header_balance || 0) + due - rec;
     var title = document.getElementById('ledgerTitle');
-    if (title) title.innerHTML = '<strong style="font-size:1.1em">' + (c.client_code || '') + '</strong> · Ledger';
+    if (title) title.textContent = c.client_code || 'Client ledger';
     var sub = document.getElementById('ledgerSub');
     if (sub) {
-      sub.innerHTML = '<strong>' + (c.client_name || '') + '</strong>' +
-        (c.phone ? ' · ' + c.phone : '') +
-        (c.email ? ' · ' + c.email : '') +
-        (c.city ? ' · ' + c.city : '') +
-        ' · Balance <strong style="color:' + (bal > 0 ? 'var(--accent)' : 'var(--accent2)') + '">' + fmt(bal) + '</strong>';
+      sub.innerHTML = '<div class="ledger-profile"><div class="ledger-profile-copy"><h2 class="ledger-client-name">' + clientDisplayText(c.client_name || 'Unnamed client') + '</h2>' +
+        '<dl class="ledger-contact"><div><dt>City</dt><dd>' + clientDisplayText(c.city || 'Not provided') + '</dd></div>' +
+        '<div><dt>Phone</dt><dd>' + clientDisplayText(c.phone || 'Not provided') + '</dd></div>' +
+        '<div><dt>Email</dt><dd>' + clientDisplayText(c.email || 'Not provided') + '</dd></div></dl></div>' +
+        '<div class="ledger-balance ' + (bal > 0 ? 'neg' : 'pos') + '"><span>' + (bal > 0 ? 'Outstanding balance' : bal < 0 ? 'Credit balance' : 'Settled balance') + '</span><div><small>PKR</small><strong>' + fmt(bal) + '</strong></div><p>Opening + charges − received</p></div></div>' +
+        '<dl class="ledger-summary"><div><dt>Opening balance</dt><dd><small>PKR</small> ' + fmt(c.header_balance || 0) + '</dd></div>' +
+        '<div><dt>Total charged</dt><dd><small>PKR</small> ' + fmt(due) + '</dd></div>' +
+        '<div><dt>Total received</dt><dd><small>PKR</small> ' + fmt(rec) + '</dd></div><div><dt>Active entries</dt><dd>' + active.length + '</dd></div></dl>';
     }
     var so = document.getElementById('stageOutstanding');
     if (so) { so.style.display = 'none'; so.innerHTML = ''; }
@@ -1051,7 +1054,7 @@
         '<button class="btn sm del" data-action="void" data-entry="' + escape(entry.id) + '">VOID</button> ' +
         '<button class="btn sm" data-action="print" data-entry="' + escape(entry.id) + '">PRINT</button>';
       return '<tr class="' + escape(entry.entry_type) + '-row"' + (voided ? ' style="opacity:.45;text-decoration:line-through;"' : '') + '>' +
-        '<td><input class="ledger-entry-check" type="checkbox" value="' + escape(entry.id) + '"' + (voided ? ' disabled' : '') + ' onchange="toggleLedgerEntrySelection(this.value,this.checked)"></td>' +
+        '<td><input class="ledger-entry-check" type="checkbox" aria-label="Select ' + escape(entry.entry_date || '') + ' ' + escape(entry.entry_type) + ' entry" value="' + escape(entry.id) + '"' + (voided ? ' disabled' : '') + ' onchange="toggleLedgerEntrySelection(this.value,this.checked)"></td>' +
         '<td class="date-cell">' + escape(entry.entry_date || '') + '</td>' +
         '<td><span class="entry-kind ' + escape(entry.entry_type) + '">' + (voided ? 'VOID · ' : '') + (entry.entry_type === 'receiving' ? 'PAYMENT' : 'CHARGE') + '</span></td>' +
         '<td>' + stageBadge(entry.stage) + '</td><td class="folder-no"><strong>' + escape(tm) + '</strong></td>' +
