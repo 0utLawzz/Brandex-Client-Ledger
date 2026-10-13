@@ -10,7 +10,6 @@
 <meta name="theme-color" content="#C94A00">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
-<link rel="stylesheet" href="ui-enhancements.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 @page { size: A4; margin: 12mm; }
@@ -38,6 +37,7 @@
 .report-group h3 { font-family:'Bebas Neue',sans-serif; font-size:22px; border-left:6px solid #C94A00; padding-left:10px; margin-bottom:8px; }
 .report-divider { border-top:3px solid #C94A00; margin:18px 0 10px; padding-top:8px; }
 </style>
+<link rel="stylesheet" href="ui-enhancements.css">
 </head>
 <body>
 
@@ -47,9 +47,9 @@
     <div><div class="nb-brand-text">BRANDEX</div><div class="nb-brand-sub">Client Ledger</div></div>
   </div>
   <div class="nb-nav">
-    <div class="ni active" data-page="dashboard">Dashboard</div>
-    <div class="ni" data-page="clients">Clients</div>
-    <div class="ni" data-page="reports">Reports</div>
+    <button class="ni active" type="button" data-page="dashboard">Dashboard</button>
+    <button class="ni" type="button" data-page="clients">Clients</button>
+    <button class="ni" type="button" data-page="reports">Reports</button>
     <button class="btn sm" id="signOutButton" type="button" onclick="signOutLedger()" style="display:none;">SIGN OUT</button>
   </div>
   <div class="nb-stats">
@@ -99,9 +99,9 @@
 
   <div class="page" id="page-clients">
     <div class="ph"><div class="ph-title">Clients</div><div class="ph-sub">Multi-series accounts · Custom stage rates</div></div>
-    <div class="tb">
-      <input class="fi" id="clientSearch" placeholder="Search code, name, city, phone…" oninput="renderClients()" style="max-width:280px;">
-      <select class="fsel" id="seriesFilter" onchange="renderClients()" style="max-width:160px;"><option value="">All Series</option></select>
+    <div class="tb filter-panel client-filters">
+      <div class="fgroup"><label class="flbl" for="clientSearch">Find a client</label><input class="fi" id="clientSearch" placeholder="Search code, name, city, phone…" oninput="renderClients()"></div>
+      <div class="fgroup"><label class="flbl" for="seriesFilter">Series</label><select class="fsel" id="seriesFilter" onchange="renderClients()"><option value="">All Series</option></select></div>
       <button class="btn prim" onclick="openClientModal()">+ New Client</button>
       <button class="btn" onclick="openSeriesModal()">+ New Series</button>
     </div>
@@ -126,21 +126,22 @@
 
   <div class="page" id="page-reports">
     <div class="ph"><div class="ph-title">Reports</div><div class="ph-sub">Filter · Group · Export A4</div></div>
-    <div class="tb">
-      <input class="fi" id="reportSearch" placeholder="SEARCH CLIENT, CASE, TM, DETAILS" style="max-width:260px;">
-      <select class="fsel" id="reportClient" style="max-width:220px;"><option value="">All Clients</option></select>
-      <select class="fsel" id="reportStage" style="max-width:140px;">
+    <div class="tb filter-panel report-filters">
+      <div class="fgroup"><label class="flbl" for="reportSearch">Search entries</label><input class="fi" id="reportSearch" placeholder="SEARCH CLIENT, CASE, TM, DETAILS" style="max-width:260px;"></div>
+      <div class="fgroup"><label class="flbl" for="reportClient">Client</label><select class="fsel" id="reportClient" style="max-width:220px;"><option value="">All Clients</option></select></div>
+      <div class="fgroup"><label class="flbl" for="reportStage">Stage</label><select class="fsel" id="reportStage" style="max-width:140px;">
         <option value="">All Stages</option><option value="S1">Stage 1</option><option value="S2">Stage 2</option><option value="S3">Stage 3</option><option value="S4">Stage 4</option>
-      </select>
-      <input class="fi" id="reportFrom" type="date" aria-label="Report start date" style="max-width:160px;">
-      <input class="fi" id="reportTo" type="date" aria-label="Report end date" style="max-width:160px;">
-      <select class="fsel" id="reportGroup" style="max-width:140px;">
+      </select></div>
+      <div class="fgroup"><label class="flbl" for="reportGroup">Group results</label><select class="fsel" id="reportGroup" style="max-width:140px;">
         <option value="client">By Client</option>
         <option value="case">By Case / TM</option>
         <option value="stage">By Stage</option>
-      </select>
-      <button class="btn prim" onclick="runReport()">Run Report</button>
-      <button class="btn" onclick="printSelectedA4()">Print A4</button>
+      </select></div>
+      <div class="fgroup"><label class="flbl" for="reportFrom">From date</label><input class="fi" id="reportFrom" type="date" aria-label="Report start date" style="max-width:160px;"></div>
+      <div class="fgroup"><label class="flbl" for="reportTo">To date</label><input class="fi" id="reportTo" type="date" aria-label="Report end date" style="max-width:160px;"></div>
+
+      <div class="filter-actions"><button class="btn prim" onclick="runReport()">Run Report</button>
+      <button class="btn" onclick="printSelectedA4()">Print A4</button></div>
     </div>
     <div id="reportOutput" class="ledger-page" style="margin-top:12px;padding:16px;"></div>
   </div>
