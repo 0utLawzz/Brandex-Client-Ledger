@@ -228,8 +228,8 @@ runReport = function() {
   let html = '';
   Object.keys(groups).sort().forEach(k => {
     html += `<div class="report-group report-divider">
-      <h3><strong>${k}</strong> <span style="font-size:12px;color:var(--muted);">(${groups[k].length})</span>
-      <label style="font-size:11px;margin-left:8px;"><input type="checkbox" onchange="toggleGroupChecks(this)"> all</label></h3>
+      <h3><strong>${clientDisplayText(k)}</strong> <span class="report-count">${groups[k].length} entries</span>
+      <label class="report-select"><input type="checkbox" onchange="toggleGroupChecks(this)"> Select group</label></h3>
       <table class="lt" style="width:100%;min-width:640px;"><thead><tr>
         <th></th><th>Date</th><th>Client</th><th>Type</th><th>Stage</th><th>TM</th><th>Details</th><th>Due</th><th>Received</th>
       </tr></thead><tbody>`;
@@ -246,13 +246,13 @@ function reportRowHTML(e) {
   const tm = e.cases?.tm_no || e.cases?.application_name || '—';
   const badge = (typeof stageBadge === 'function') ? stageBadge(e.stage) : (e.stage || '—');
   return `<tr class="${e.entry_type}-row" data-id="${e.id}">
-    <td><input type="checkbox" class="row-check" value="${e.id}" onchange="toggleRow('${e.id}',this.checked)"></td>
+    <td><input type="checkbox" class="row-check" aria-label="Select ${clientDisplayText(code)} ${clientDisplayText(e.entry_date || '')} ${clientDisplayText(e.entry_type)}" value="${e.id}" onchange="toggleRow('${e.id}',this.checked)"></td>
     <td class="date-cell">${e.entry_date || ''}</td>
-    <td><strong>${code}</strong></td>
+    <td><strong>${clientDisplayText(code)}</strong></td>
     <td>${e.entry_type}</td>
     <td>${badge}</td>
-    <td><strong>${tm}</strong></td>
-    <td>${e.details || ''}${e.payment_method ? ' · ' + e.payment_method : ''}</td>
+    <td><strong>${clientDisplayText(tm)}</strong></td>
+    <td>${clientDisplayText(e.details || '')}${e.payment_method ? ' · ' + clientDisplayText(e.payment_method) : ''}</td>
     <td class="amt-due">${e.amount_due ? fmt(e.amount_due) : ''}</td>
     <td class="amt-rec">${e.amount_received ? fmt(e.amount_received) : ''}</td>
   </tr>`;
