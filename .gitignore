@@ -1,0 +1,7 @@
+﻿# Local Supabase CLI state
+/supabase/.temp/
+# Local environment and tooling
+.env
+.env.*
+!.env.example
+.venv/
