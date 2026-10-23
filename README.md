@@ -138,6 +138,8 @@ get_stage_payment_status(tm_digits text)
 
 The database applies case-linked general payments FIFO to the oldest outstanding stage. Case-less client balance payments remain unallocated and do not clear a specific case stage. CMS keeps its `stageX_paid` flags as a cache only. Do not expose a Supabase service-role key in a browser; CMS must call the RPC from a trusted server-side integration with narrowly scoped credentials. CMS-side wiring and production credentials remain required for end-to-end synchronization.
 
+The CMS bridge source uses the Ledger `cms-payment-status` Supabase Edge Function. It accepts only normalized six-digit TM lookups, requires the shared server-only `CMS_LEDGER_INTEGRATION_SECRET`, and returns read-only stage summaries. See [CMS payment bridge setup](docs/CMS_PAYMENT_BRIDGE.md); do not place this secret in browser or Vercel frontend variables.
+
 ---
 
 ## License
