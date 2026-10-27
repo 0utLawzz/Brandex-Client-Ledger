@@ -129,6 +129,8 @@ All existing concepts from the previous Ledger (`client_code`, `tm_no`, `stage`,
 
 ## Integration with Brandex-Database-CMS
 
+Stage payment is confirmed only when a positive stage charge exists and valid, non-voided receipts allocated to that stage cover the charge. A receipt against a zero-charge stage does not make it paid.
+
 The authenticated, read-only RPC returns paid status and amounts for each stage:
 
 ```sql

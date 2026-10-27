@@ -7,6 +7,10 @@ and this project follows a practical semantic versioning approach for an interna
 
 ## [Unreleased]
 
+### Fixed
+- Keep zero-charge stages unpaid; count only non-voided receipts allocated to the stage when reporting payment status.
+- Added rollback-only SQL regression coverage for partial receipts, overpayment, zero due, and voided receipts.
+
 ### Planned
 - Configurable custom stages (beyond hard-coded S1–S4)
 - Editable client account prefix / series branding settings UI
