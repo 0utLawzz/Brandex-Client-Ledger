@@ -318,7 +318,12 @@ async function saveCharge() {
 
   if (sb) {
     if (tmNorm) {
-      let { data: existing } = await sb.from('ledger_cases').select('id, application_name, tm_no').eq('tm_no_normalized', tmNorm).eq('client_id', clientId).maybeSingle();
+      const { data: existing, error: lookupError } = await sb.from('ledger_cases')
+        .select('id, client_id, application_name, tm_no').eq('tm_no_normalized', tmNorm).maybeSingle();
+      if (lookupError) return toast(lookupError.message);
+      if (existing && existing.client_id !== clientId) {
+        return toast('This TM is already assigned to another client. Ask an administrator to review it.');
+      }
       if (existing) caseId = existing.id;
       else {
         const { data: created, error } = await sb.from('ledger_cases').insert({
