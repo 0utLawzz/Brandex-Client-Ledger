@@ -37,7 +37,7 @@ function fmt(n) {
 function normalizeTM(tm) {
   if (!tm) return null;
   const d = String(tm).replace(/[^0-9]/g, '');
-  return d || null;
+  return d.length === 6 ? d : null;
 }
 async function lookupCaseByTM(tm) {
   const tmNorm = normalizeTM(tm);
@@ -312,6 +312,8 @@ async function saveCharge() {
   if (stage !== 'S1' && !tm) return toast('TM number required for ' + stage + ' (allotted from Acknowledgment onward)');
 
   const tmNorm = normalizeTM(tm);
+  if (tm && !tmNorm) return toast('Enter a valid six-digit TM number');
+  if (stage !== 'S1' && !tmNorm) return toast('A valid six-digit TM number is required for ' + stage);
   let caseId = null;
 
   if (sb) {
@@ -320,7 +322,7 @@ async function saveCharge() {
       if (existing) caseId = existing.id;
       else {
         const { data: created, error } = await sb.from('ledger_cases').insert({
-          client_id: clientId, tm_no: tm, folder_no: document.getElementById('chFolder').value.trim() || null
+          client_id: clientId, tm_no: tm, tm_no_normalized: tmNorm, folder_no: document.getElementById('chFolder').value.trim() || null
         }).select().single();
         if (error) return toast(error.message);
         caseId = created.id;
@@ -412,6 +414,7 @@ async function saveReceiving() {
   if (sb) {
     if (tm) {
       const tmNorm = normalizeTM(tm);
+      if (!tmNorm) return toast('Enter a valid six-digit TM number');
       const { data: existing, error: lookupError } = await sb.from('ledger_cases')
         .select('id, client_id').eq('tm_no_normalized', tmNorm).maybeSingle();
       if (lookupError) return toast(lookupError.message);
@@ -421,7 +424,7 @@ async function saveReceiving() {
       if (existing) caseId = existing.id;
       else {
         const { data: created, error } = await sb.from('ledger_cases')
-          .insert({ client_id: clientId, tm_no: tm })
+          .insert({ client_id: clientId, tm_no: tm, tm_no_normalized: tmNorm })
           .select('id').single();
         if (error) return toast(error.message);
         caseId = created.id;
