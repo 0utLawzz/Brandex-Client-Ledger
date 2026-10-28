@@ -1,8 +1,8 @@
 // ============================================================
 // CONFIG — set your Supabase project keys
 // ============================================================
-const SUPABASE_URL = localStorage.getItem('bx_supabase_url') || 'https://addiipgeoqdgrjbgytta.supabase.co';
-const SUPABASE_ANON = localStorage.getItem('bx_supabase_anon') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkZGlpcGdlb3FkZ3JqYmd5dHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwNjQ2MTUsImV4cCI6MjEwNjY0MDYxNX0.gIYzWCQ_12K0I3G8VwfbebgdKVF9duawdPuXozL7rLM';
+const SUPABASE_URL = 'https://jzcrfbyypbbbittzbyyx.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_D7u9Xr3q2KM2flN9F30Omg_vyaYe6ki';
 
 let sb = null;
 if (SUPABASE_URL && SUPABASE_ANON) {
@@ -42,8 +42,8 @@ function normalizeTM(tm) {
 async function lookupCaseByTM(tm) {
   const tmNorm = normalizeTM(tm);
   if (!tmNorm || !sb) return null;
-  const { data } = await sb.from('cases')
-    .select('id, tm_no, application_name, folder_no, client_id, clients(client_code, client_name)')
+  const { data } = await sb.from('ledger_cases')
+    .select('id, tm_no, application_name, folder_no, client_id, ledger_clients(client_code, client_name)')
     .eq('tm_no_normalized', tmNorm)
     .maybeSingle();
   return data;
@@ -71,7 +71,7 @@ document.querySelectorAll('.ni').forEach(ni => {
 
 async function loadSeries() {
   if (sb) {
-    const { data, error } = await sb.from('series').select('*').order('sort_order');
+    const { data, error } = await sb.from('ledger_series').select('*').order('sort_order');
     if (error) return toast('Could not load series: ' + error.message);
     if (data) mem.series = data;
   }
@@ -89,7 +89,7 @@ async function loadSeries() {
 
 async function loadClients() {
   if (sb) {
-    const { data, error } = await sb.from('clients').select('*, series(code), client_stage_rates(*)').order('client_code');
+    const { data, error } = await sb.from('ledger_clients').select('*, ledger_series(code), ledger_client_stage_rates(*)').order('client_code');
     if (error) return toast('Could not load clients: ' + error.message);
     if (data) {
       mem.clients = data;
@@ -105,7 +105,7 @@ async function loadClients() {
 async function loadEntries() {
   if (sb) {
     const { data, error } = await sb.from('ledger_entries')
-      .select('*, clients(client_code, client_name), cases(tm_no, folder_no, application_name)')
+      .select('*, ledger_clients(client_code, client_name), ledger_cases(tm_no, folder_no, application_name)')
       .order('entry_date', { ascending: false })
       .order('created_at', { ascending: false });
     if (error) return toast('Could not load ledger entries: ' + error.message);
@@ -263,10 +263,10 @@ async function saveClient() {
     S4: Number(document.getElementById('rS4').value) || 0
   };
   if (sb) {
-    const { data, error } = await sb.from('clients').insert(payload).select().single();
+    const { data, error } = await sb.from('ledger_clients').insert(payload).select().single();
     if (error) return toast(error.message);
     const rateRows = Object.entries(rates).map(([stage, amount]) => ({ client_id: data.id, stage, amount }));
-    await sb.from('client_stage_rates').upsert(rateRows, { onConflict: 'client_id,stage' });
+    await sb.from('ledger_client_stage_rates').upsert(rateRows, { onConflict: 'client_id,stage' });
     toast('Client saved');
   } else {
     const id = 'c' + Date.now();
@@ -316,10 +316,10 @@ async function saveCharge() {
 
   if (sb) {
     if (tmNorm) {
-      let { data: existing } = await sb.from('cases').select('id, application_name, tm_no').eq('tm_no_normalized', tmNorm).eq('client_id', clientId).maybeSingle();
+      let { data: existing } = await sb.from('ledger_cases').select('id, application_name, tm_no').eq('tm_no_normalized', tmNorm).eq('client_id', clientId).maybeSingle();
       if (existing) caseId = existing.id;
       else {
-        const { data: created, error } = await sb.from('cases').insert({
+        const { data: created, error } = await sb.from('ledger_cases').insert({
           client_id: clientId, tm_no: tm, folder_no: document.getElementById('chFolder').value.trim() || null
         }).select().single();
         if (error) return toast(error.message);
@@ -328,7 +328,7 @@ async function saveCharge() {
     } else {
       // Stage 1 pre-TM: placeholder case (folder only)
       const folder = document.getElementById('chFolder').value.trim() || null;
-      const { data: created, error } = await sb.from('cases').insert({
+      const { data: created, error } = await sb.from('ledger_cases').insert({
         client_id: clientId, tm_no: null, folder_no: folder
       }).select().single();
       if (error) return toast(error.message);
@@ -408,10 +408,10 @@ async function saveReceiving() {
   if (sb) {
     if (tm) {
       const tmNorm = normalizeTM(tm);
-      let { data: existing } = await sb.from('cases').select('id').eq('tm_no_normalized', tmNorm).eq('client_id', clientId).maybeSingle();
+      let { data: existing } = await sb.from('ledger_cases').select('id').eq('tm_no_normalized', tmNorm).eq('client_id', clientId).maybeSingle();
       if (existing) caseId = existing.id;
       else {
-        const { data: created } = await sb.from('cases').insert({ client_id: clientId, tm_no: tm }).select().single();
+        const { data: created } = await sb.from('ledger_cases').insert({ client_id: clientId, tm_no: tm }).select().single();
         if (created) caseId = created.id;
       }
     }
