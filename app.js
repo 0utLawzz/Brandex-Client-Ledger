@@ -96,7 +96,7 @@ async function loadClients() {
       mem.rates = {};
       data.forEach(c => {
         mem.rates[c.id] = {};
-        (c.client_stage_rates || []).forEach(r => { mem.rates[c.id][r.stage] = r.amount; });
+        (c.ledger_client_stage_rates || []).forEach(r => { mem.rates[c.id][r.stage] = r.amount; });
       });
     }
   }
@@ -117,7 +117,7 @@ async function loadDashboard() {
   await Promise.all([loadSeries(), loadClients(), loadEntries()]);
   const clients = mem.clients.length;
   let due = 0, rec = 0;
-  mem.entries.forEach(e => {
+  mem.entries.filter(e => !e.voided_at).forEach(e => {
     due += Number(e.amount_due || 0);
     rec += Number(e.amount_received || 0);
   });
@@ -132,8 +132,8 @@ async function loadDashboard() {
   const tbody = document.querySelector('#recentTable tbody');
   tbody.innerHTML = '';
   mem.entries.slice(0, 10).forEach(e => {
-    const code = e.clients?.client_code || '—';
-    const tm = e.cases?.tm_no || e.cases?.application_name || e.details || '—';
+    const code = e.ledger_clients?.client_code || '—';
+    const tm = e.ledger_cases?.tm_no || e.ledger_cases?.application_name || e.details || '—';
     tbody.innerHTML += `<tr class="${e.entry_type}-row">
       <td class="date-cell">${e.entry_date || ''}</td>
       <td>${code}</td>
@@ -164,9 +164,9 @@ function renderClients() {
     return;
   }
   list.forEach(c => {
-    const seriesCode = c.series?.code || mem.series.find(s => s.id === c.series_id)?.code || '—';
+    const seriesCode = c.ledger_series?.code || mem.series.find(s => s.id === c.series_id)?.code || '—';
     let due = 0, rec = 0;
-    mem.entries.filter(e => e.client_id === c.id).forEach(e => {
+    mem.entries.filter(e => e.client_id === c.id && !e.voided_at).forEach(e => {
       due += Number(e.amount_due || 0);
       rec += Number(e.amount_received || 0);
     });
@@ -196,7 +196,7 @@ async function openClientLedger(clientId) {
   document.getElementById('lhName').textContent = c.client_name || '—';
   let due = 0, rec = 0;
   const rows = mem.entries.filter(e => e.client_id === clientId);
-  rows.forEach(e => { due += Number(e.amount_due || 0); rec += Number(e.amount_received || 0); });
+  rows.filter(e => !e.voided_at).forEach(e => { due += Number(e.amount_due || 0); rec += Number(e.amount_received || 0); });
   const bal = Number(c.header_balance || 0) + due - rec;
   document.getElementById('lhBal').textContent = fmt(bal);
   renderClientEntries(rows);
@@ -209,7 +209,7 @@ function renderClientEntries(rows) {
   let list = [...rows].sort((a, b) => (b.entry_date || '').localeCompare(a.entry_date || '') || (b.created_at || '').localeCompare(a.created_at || ''));
   if (currentViewMode) list = list.slice(0, 6);
   list.forEach(e => {
-    const tm = e.cases?.tm_no || e.cases?.folder_no || e.cases?.application_name || '—';
+    const tm = e.ledger_cases?.tm_no || e.ledger_cases?.folder_no || e.ledger_cases?.application_name || '—';
     tbody.innerHTML += `<tr class="${e.entry_type}-row">
       <td class="date-cell">${e.entry_date || ''}</td>
       <td>${e.entry_type}</td>
@@ -391,6 +391,7 @@ function openReceivingModal(preClientId) {
   document.getElementById('rcMethod').value = 'Cash';
   document.getElementById('rcDate').value = today();
   document.getElementById('rcNotes').value = '';
+  document.getElementById('modalReceiving').dataset.requestId = crypto.randomUUID();
   openModal('modalReceiving');
   bindTMLookup('rcTM', 'rcTMInfo');
 }
@@ -402,34 +403,57 @@ async function saveReceiving() {
 
   const tm = document.getElementById('rcTM').value.trim();
   const stage = document.getElementById('rcStage').value || null;
-  const receiptNo = 'R-' + Date.now().toString().slice(-8);
+  const entryDate = document.getElementById('rcDate').value || today();
+  const paymentMethod = document.getElementById('rcMethod').value;
+  const details = document.getElementById('rcNotes').value.trim() || 'Payment received';
+  const linkedEntryId = document.getElementById('rcLinkedCharge').value || null;
   let caseId = null;
 
   if (sb) {
     if (tm) {
       const tmNorm = normalizeTM(tm);
-      let { data: existing } = await sb.from('ledger_cases').select('id').eq('tm_no_normalized', tmNorm).eq('client_id', clientId).maybeSingle();
+      const { data: existing, error: lookupError } = await sb.from('ledger_cases')
+        .select('id, client_id').eq('tm_no_normalized', tmNorm).maybeSingle();
+      if (lookupError) return toast(lookupError.message);
+      if (existing && existing.client_id !== clientId) {
+        return toast('This TM is already assigned to another client. Ask an administrator to review it.');
+      }
       if (existing) caseId = existing.id;
       else {
-        const { data: created } = await sb.from('ledger_cases').insert({ client_id: clientId, tm_no: tm }).select().single();
-        if (created) caseId = created.id;
+        const { data: created, error } = await sb.from('ledger_cases')
+          .insert({ client_id: clientId, tm_no: tm })
+          .select('id').single();
+        if (error) return toast(error.message);
+        caseId = created.id;
       }
     }
-    const row = {
-      client_id: clientId,
-      case_id: caseId,
-      entry_date: document.getElementById('rcDate').value || today(),
-      entry_type: 'receiving',
-      stage,
-      details: document.getElementById('rcNotes').value.trim() || 'Payment received',
-      amount_received: amount,
-      payment_method: document.getElementById('rcMethod').value,
-      receipt_no: receiptNo
-    };
-    const { data, error } = await sb.from('ledger_entries').insert(row).select().single();
+    const requestId = document.getElementById('modalReceiving').dataset.requestId || crypto.randomUUID();
+    const { data, error } = await sb.rpc('record_ledger_receiving', {
+      p_client_id: clientId,
+      p_case_id: caseId,
+      p_entry_date: entryDate,
+      p_stage: stage,
+      p_amount: amount,
+      p_payment_method: paymentMethod,
+      p_details: details,
+      p_notes: details,
+      p_linked_entry_id: linkedEntryId,
+      p_request_id: requestId
+    });
     if (error) return toast(error.message);
     toast('Receiving saved');
-    printReceipt({ ...row, clients: mem.clients.find(c => c.id === clientId), id: data.id });
+    printReceipt({
+      id: data.id,
+      client_id: clientId,
+      ledger_clients: mem.clients.find(c => c.id === clientId),
+      entry_date: data.entry_date,
+      entry_type: 'receiving',
+      stage: data.stage,
+      amount_received: data.amount,
+      payment_method: paymentMethod,
+      receipt_no: data.receipt_no,
+      details
+    });
   } else {
     toast('Connect Supabase to save');
   }
@@ -440,7 +464,7 @@ async function saveReceiving() {
 }
 
 function printReceipt(entry) {
-  const client = entry.clients || mem.clients.find(c => c.id === entry.client_id) || {};
+  const client = entry.ledger_clients || entry.clients || mem.clients.find(c => c.id === entry.client_id) || {};
   const html = `
     <div class="receipt-box">
       <h1>BRANDEX LAW ASSOCIATES</h1>
@@ -474,8 +498,8 @@ function runReport() {
   let list = [...mem.entries];
   if (stage) list = list.filter(e => e.stage === stage);
   if (q) list = list.filter(e => {
-    const code = (e.clients?.client_code || '').toLowerCase();
-    const tm = (e.cases?.tm_no || '').toLowerCase();
+    const code = (e.ledger_clients?.client_code || '').toLowerCase();
+    const tm = (e.ledger_cases?.tm_no || '').toLowerCase();
     const det = (e.details || '').toLowerCase();
     return code.includes(q) || tm.includes(q) || det.includes(q);
   });
@@ -483,8 +507,8 @@ function runReport() {
   tbody.innerHTML = '';
   selectedRows.clear();
   list.forEach(e => {
-    const code = e.clients?.client_code || '—';
-    const tm = e.cases?.tm_no || '—';
+    const code = e.ledger_clients?.client_code || '—';
+    const tm = e.ledger_cases?.tm_no || '—';
     tbody.innerHTML += `<tr class="${e.entry_type}-row" data-id="${e.id}">
       <td><input type="checkbox" class="row-check" value="${e.id}" onchange="toggleRow('${e.id}',this.checked)"></td>
       <td class="date-cell">${e.entry_date || ''}</td>
@@ -508,7 +532,7 @@ function exportCSV(selectedOnly) {
   if (selectedOnly) list = list.filter(e => selectedRows.has(e.id));
   if (!list.length) return toast('Nothing to export');
   const header = ['Date','Client','Type','Stage','TM','Details','Amount Due','Amount Received','Receipt No'].map(value => value.toUpperCase());
-  const rows = list.map(e => [e.entry_date||'', e.clients?.client_code||'', e.entry_type, e.stage||'', e.cases?.tm_no||'', (e.details||'').replace(/,/g,' '), e.amount_due||'', e.amount_received||'', e.receipt_no||'']
+  const rows = list.map(e => [e.entry_date||'', e.ledger_clients?.client_code||'', e.entry_type, e.stage||'', e.ledger_cases?.tm_no||'', (e.details||'').replace(/,/g,' '), e.amount_due||'', e.amount_received||'', e.receipt_no||'']
     .map(value => typeof value === 'string' ? value.toUpperCase() : value));
   const csv = [header, ...rows].map(r => r.join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
