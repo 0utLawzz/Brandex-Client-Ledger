@@ -2,18 +2,18 @@
    BRANDEX NEO-BRUTALISM DESIGN SYSTEM (LOCKED — do not change)
    ========================================================= */
 :root {
-  --bg:         #F0E8D0;
-  --bg-alt:     #E8DFC7;
-  --panel:      #FAF6EE;
-  --black:      #0C0C0C;
-  --accent:     #C94A00;
-  --accent2:    #0D9970;
-  --accent3:    #D4A800;
-  --accent4:    #0A6B52;
-  --text:       #0C0C0C;
-  --muted:      #555555;
-  --danger:     #C94A00;
-  --card:       #FAF6EE;
+  --bg:         #F5F7FA;
+  --bg-alt:     #EAF0F5;
+  --panel:      #FFFFFF;
+  --black:      #293A50;
+  --accent:     #C63D33;
+  --accent2:    #0F766E;
+  --accent3:    #805D33;
+  --accent4:    #115E59;
+  --text:       #293A50;
+  --muted:      #53657A;
+  --danger:     #C63D33;
+  --card:       #FFFFFF;
   --nav-h:      60px;
 }
 *{box-sizing:border-box;margin:0;padding:0;}

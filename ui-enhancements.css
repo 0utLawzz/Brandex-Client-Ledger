@@ -276,3 +276,61 @@
     .client-card:hover { transform:none; }
   }
 }
+
+
+/* Brandex color-shade refresh: navy, coral and almond 700 with bright surfaces. */
+@media screen {
+  :root {
+    --navy-600:#344C68; --navy-700:#293A50;
+    --coral-700:#C63D33; --almond-700:#805D33;
+    --teal-700:#0F766E; --teal-800:#115E59;
+    --font-display:'Manrope',Arial,sans-serif;
+    --font-body:'Manrope',Arial,sans-serif;
+    --ui-line:1px solid #C7D2DF;
+    --ui-shadow:0 5px 16px rgba(41,58,80,.14),inset 0 1px 0 rgba(255,255,255,.9);
+  }
+  html body { background:#F5F7FA; color:#293A50; }
+  .navbar { background:#293A50; border-bottom:4px solid #C63D33; box-shadow:0 5px 14px rgba(41,58,80,.2); }
+  .nb-logo { border-color:#C63D33; }
+  .nb-brand-text { font-family:var(--font-display);font-weight:800; }
+  .nb-brand-sub { color:#D9E2EC; }
+  .ni.active { background:#C63D33;color:#fff;border-color:#C63D33;box-shadow:0 4px 10px rgba(198,61,51,.25); }
+  .ni:hover { border-color:#C63D33; }
+  .ph { border-bottom:1px dashed #B9C6D4; }
+  .ph-title,#ledgerTitle,.section-heading h2,.chart-title,.filter-intro h2,.mt,.auth-card h1 { font-family:var(--font-display);color:#293A50;font-weight:800; }
+  .page-kicker,.series-banner,.page-number { color:#C63D33; }
+  .page-number { border:1px dashed #C63D33;background:#FFF1EF;border-radius:12px;box-shadow:var(--ui-shadow); }
+  .sc,.client-card,.ledger-page,.chart-card,.filter-panel,.mbox,.auth-card,.phase2-case-panel,.phase2-stage-panel,.phase2-chart,.case-list-panel {
+    border:1px solid #C7D2DF!important;border-radius:12px;box-shadow:var(--ui-shadow)!important;
+  }
+  .sc { background:#fff; }
+  .sc.g { background:linear-gradient(145deg,#fff,#E5F2EF);border-color:#0F766E!important; }
+  .sc.y { background:linear-gradient(145deg,#fff,#F3EDE4);border-color:#805D33!important; }
+  .sc.t { background:linear-gradient(145deg,#fff,#FFF0EE);border-color:#C63D33!important; }
+  .btn { border:1px solid #AEBECE;border-radius:8px;box-shadow:0 3px 8px rgba(41,58,80,.13),inset 0 1px 0 #fff; }
+  .btn:hover { transform:translateY(-2px);box-shadow:0 7px 15px rgba(41,58,80,.18),inset 0 1px 0 #fff; }
+  .btn.prim { background:#C63D33;border-color:#A82F28;color:#fff; }
+  .btn.ok { background:#0F766E;border-color:#115E59;color:#fff; }
+  .btn.del { border-color:#C63D33;color:#A82F28; }
+  .fi,.fsel { border:1px solid #B9C6D4;border-radius:8px;background:#fff; }
+  .fi:focus,.fsel:focus { border-color:#344C68;box-shadow:0 0 0 3px rgba(52,76,104,.16); }
+  .lt th,.phase2-case-table th { background:#293A50;color:#fff;border-bottom:3px solid #C63D33; }
+  .lt tr:hover td,.case-list-table tbody tr:hover td,.phase2-case-table tr:hover td { background:#F2F5F8; }
+  .stage-b,.case-status,.entry-kind,.phase2-status,.phase2-type { border-style:dashed;border-radius:999px; }
+  .stage-b.s1 { background:#E8EDF3;color:#344C68;border-color:#344C68; }
+  .stage-b.s2,.case-status.cleared,.entry-kind.receiving,.phase2-status.paid,.phase2-type.receiving { background:#E5F2EF;color:#0F766E;border-color:#0F766E; }
+  .stage-b.s3 { background:#F3EDE4;color:#805D33;border-color:#805D33; }
+  .stage-b.s4 { background:#FFF0EE;color:#C63D33;border-color:#C63D33; }
+  .case-status.outstanding,.entry-kind.charge,.phase2-status.due,.phase2-type.charge { background:#FFF0EE;color:#C63D33;border-color:#C63D33; }
+  .mh { background:#344C68;color:#fff;border-radius:11px 11px 0 0; }
+  .mf { background:#EAF0F5;border-top:1px dashed #B9C6D4; }
+  .toast { background:#293A50;color:#fff;border:1px solid #C63D33;border-radius:9px;box-shadow:0 6px 18px rgba(41,58,80,.2); }
+  .chart-swatch,.chart-bar { border-radius:4px 4px 0 0;border-color:#B9C6D4; }
+  .chart-bar.charge,.phase2-bar.charge { background:linear-gradient(180deg,#E66B62,#C63D33); }
+  .chart-bar.receiving,.phase2-bar.receiving { background:linear-gradient(180deg,#2C978B,#0F766E); }
+  .dashboard-charts .chart-card { background:#344C68;color:#fff;border-color:#293A50!important; }
+  .dashboard-charts .chart-title,.dashboard-charts .chart-legend,.dashboard-charts .chart-month,.dashboard-charts .chart-empty { color:#fff; }
+  .dashboard-charts .chart-bars { border-color:rgba(255,255,255,.55); }
+  .stage-complete { background:#0F766E;color:#fff;border-color:#293A50; }
+  .ack-title-bar { background:#C63D33;color:#fff;border-color:#293A50; }
+}
