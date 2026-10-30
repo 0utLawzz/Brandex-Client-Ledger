@@ -1,150 +1,77 @@
 # Brandex Client Ledger
 
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
-![Supabase](https://img.shields.io/badge/Supabase-Postgres-3ECF8E?logo=supabase)
-![Vercel](https://img.shields.io/badge/Deploy-Vercel-000000?logo=vercel)
-![Status](https://img.shields.io/badge/Status-Foundation-blue)
+The client-side financial ledger for Brandex Law Associates. It records client accounts, trademark cases, stage charges, receipts, balances, and printable/exportable reports.
 
-**Production:** https://brandex-client-ledger.vercel.app
+**Production:** [brandex-client-ledger.vercel.app](https://brandex-client-ledger.vercel.app)
 
-**Source of truth for client stage payments** at Brandex Law Associates.  
-Designed to feed `stageX_paid` / `stageX_paid_date` / `payment_reference` into [Brandex-Database-CMS](https://github.com/0utLawzz/Brandex-Database-CMS).
+**Repository:** [0utLawzz/Brandex-Client-Ledger](https://github.com/0utLawzz/Brandex-Client-Ledger)
+**Current baseline:** `0.2.1` (release candidate; documentation and baseline review pending preview approval)
 
----
+## Product boundary
 
-## Purpose
+Brandex Client Ledger owns financial records: client accounts and rates, TM-linked cases, charges, payments, receipts, and payment balances. Brandex Database CMS owns the fuller case record and case-workflow details. The Ledger is the financial source of truth; the CMS must not create a competing financial ledger.
 
-CMS currently uses **manual** payment flags. This ledger is the real money system:
+The intended entry flow is to create a case in the Ledger with the minimum required financial and identifying details, then open that case in the CMS to complete its fuller record. The CMS connection for this flow is not yet complete. See [Project Memory](docs/PROJECT_MEMORY.md) for the observed implementation and unresolved decisions.
 
-- Multi-series client accounts (A-series, X-series, custom groups)
-- Custom stage rates per client (S1–S4)
-- Case-wise tracking via TM number
-- Two primary actions:
-  1. **Add Record** — charge a case (by TM number)
-  2. **Add Receiving** — record a payment against a case / client
-- Printable receipts for every receiving
-- Full ledger + selective export + image export
-- Current view = latest entry + previous 5 rows
-- Dashboard with live KPIs, a six-month charges/receivings chart, and at most 10 recent entries
-- Uppercase text entry and display throughout the site
-- Supabase staff sign-in and authenticated-only database access
-- Client case/folder listing with TM, stage, payment-status, and date filters
-- Sequential stage-payment gates enforced by the database
+## Current capabilities
 
-**Theme is locked**: exact Brandex Neo-Brutalism (cream, maroon, gold, Bebas Neue, Space Grotesk, DM Mono, hard shadows, square inputs). Logo treatment and visual language are identical to the existing Brandex tools.
+- Staff sign-in backed by Supabase Auth; database table policies target authenticated users.
+- Client accounts, account series, contact details, and client-specific S1–S4 rates.
+- TM-linked charges and receiving entries, optional case/folder/application details, payment methods, and printable receipts.
+- Client and case views, stage balances, dashboard totals, filters, reports, CSV export, and print layouts.
+- Soft-void support and a stage-payment status RPC intended for trusted CMS server-side use.
 
----
+These descriptions reflect the current repository and migrations; they do not imply that Ledger-to-CMS handoff is already implemented.
 
-## Core Concepts
+## How records are created and displayed
 
-| Concept | Description |
-|---------|-------------|
-| **Series / Group** | Account series (A, X, …). Clients belong to one series. |
-| **Client** | One account. Has custom stage rates. |
-| **Case** | A trademark matter identified by TM number (+ optional folder / case ref). |
-| **Stage Rate** | Client-specific price for S1, S2, S3, S4. |
-| **Charge** | Amount due against a case + stage. |
-| **Receiving** | Payment received. Can be allocated to a specific case/stage. |
-| **Receipt** | Printable document for any receiving. |
+1. Staff sign in, choose a client, and use **Add Record** to post a stage charge. The current form can create or find a case as part of that charge; Stage 1 allows a missing TM number, while the current UI requires a TM number for later stages.
+2. The case row stores the client relationship and identifying fields such as TM number, folder number, application name, and case reference. The financial event is stored separately as a `ledger_entries` charge linked to that case.
+3. **Add Receiving** creates a separate receiving entry and can associate it with a case, stage, or charge. Receivings display in client/case ledgers and may produce a printable receipt.
+4. Dashboard, client ledger, case list, stage balance summary, reports, and print/export views read the account and entry records. Voided entries are excluded from payment calculations.
 
-Common key with CMS: **normalized TM number** (digits only).
+Creation and linking details are based on source inspection, not a new end-to-end test. Read [Project Memory](docs/PROJECT_MEMORY.md) before changing this flow.
 
----
+## Architecture
 
-## Database Schema (additive)
-
-```text
-series
-  id, code (A/X/…), name, prefix, sort_order
-
-clients
-  id, series_id, client_code (unique), client_name, city,
-  header_balance, bank_*, notes, is_active,
-  created_at, updated_at
-
-client_stage_rates
-  id, client_id, stage (S1–S4), amount, currency (PKR)
-
-cases
-  id, client_id, tm_no, tm_no_normalized, folder_no,
-  case_ref, application_name, status, notes,
-  created_at, updated_at
-
-ledger_entries
-  id, client_id, case_id (nullable),
-  entry_date, entry_type (charge|receiving),
-  stage (S1–S4 nullable), details,
-  amount_due, amount_received, running_balance,
-  payment_method, receipt_no, notes,
-  created_at
-```
-
-All existing concepts from the previous Ledger (`client_code`, `tm_no`, `stage`, `amount_due`, `amount_received`, running balance) are preserved and extended. Nothing is deleted.
-
----
-
-## Features
-
-### Actions
-- **Add Record (TM)** — look up or create case by TM number, apply client stage rate, post charge
-- **Add Receiving** — record payment, optionally allocate to case + stage, generate receipt number
-
-### Views
-- Dashboard (total clients, total received, outstanding, entries, six-month chart, 10 latest activities)
-- Client list (filter by series / search)
-- Client ledger and case/folder view with stage status and outstanding totals
-- Entry actions (charge, receive, edit, soft void, print)
-- Stage group report
-
-### Output
-- Print receipt (single receiving)
-- Print reports with charges and receivings visibly distinguished
-- Export CSV (full / filtered / selective rows)
-- Export current view as image (html2canvas)
-- Print-optimised ledger pages
-
----
-
-## Tech Stack
-
-| Layer | Choice |
-|-------|--------|
-| Frontend | Vanilla HTML + CSS + JS (single `index.html` for now) |
-| Design | Brandex Neo-Brutalism v2 (locked) |
-| Database | Supabase Postgres |
+| Area | Current implementation |
+|---|---|
+| Interface | Static HTML, CSS, and browser JavaScript; no framework build step |
+| Database and sign-in | Supabase Postgres and Supabase Auth |
 | Hosting | Vercel |
+| Primary files | `index.html`, `app.js`, `gaps.js`, `gaps-print.js`, `brand-patch.js`, `phase2.js`, CSS files |
+| Database changes | Ordered SQL files in `supabase/migrations/` |
 
----
+The scripts layer additions and overrides over earlier functions. Their load order is functional; do not remove or rearrange scripts based only on filenames or apparent duplication.
 
-## Setup
+## Local setup
 
-1. Clone
-2. Create Supabase project
-3. Run migrations in order: `001_initial_schema.sql` → `002_void_and_link.sql` → `003_client_contact.sql` → `004_staff_auth_stage_gates.sql`. Migration 004 removes anonymous database access; run it before deploying the sign-in-required frontend.
-4. Create staff accounts in the Supabase Auth dashboard; public self-registration is not enabled.
-5. Copy `.env.example` → set `SUPABASE_URL` + `SUPABASE_ANON_KEY`.
-6. Open `index.html` or deploy to Vercel.
+1. Serve this directory with a local static web server, or open `index.html` for limited inspection.
+2. Configure the Supabase URL and publishable anon key using the app's supported configuration. `.env.example` is a reference only: this project has no Vite build to read `VITE_*` variables automatically.
+3. Create staff accounts in Supabase Auth; public self-registration is not part of the app.
+4. For a new database, review and apply migrations in order. Existing environments must first be compared with their applied migration history; do not replay or edit historical migrations blindly.
 
----
+Never put a service-role key in the browser or commit credentials. Authenticated access, staff role grants, and environment configuration must be checked in the target environment.
 
-## Integration with Brandex-Database-CMS
+## Database map
 
-The authenticated, read-only RPC returns paid status and amounts for each stage:
+- `series`: account grouping and display order.
+- `clients`: client identity, contact details, balance/configuration fields.
+- `client_stage_rates`: client-specific S1–S4 charge amounts.
+- `cases`: client-linked trademark/case identifiers and descriptive fields.
+- `ledger_entries`: separate charge and receiving events, optionally linked to cases and charges.
+- RPCs and views: normalized TM lookup, stage payment status, balances, and stage calculations.
 
-```sql
-get_stage_payment_status(tm_digits text)
-→ { S1: {paid, paid_date, amount_due, amount_received, outstanding, entry_id}, … }
-```
+The database is authoritative for financial facts. The CMS may consume a narrowly scoped status result through a trusted server-side path; it must not write or infer Ledger financial events from CMS-side cached flags.
 
-The database applies case-linked general payments FIFO to the oldest outstanding stage. Case-less client balance payments remain unallocated and do not clear a specific case stage. CMS keeps its `stageX_paid` flags as a cache only. Do not expose a Supabase service-role key in a browser; CMS must call the RPC from a trusted server-side integration with narrowly scoped credentials. CMS-side wiring and production credentials remain required for end-to-end synchronization.
+## Release and change workflow
 
----
+- Work on a branch and push every code change to GitHub in a commit.
+- Vercel preview is the review environment. Do not merge to production or promote a deployment until the user approves the preview.
+- Database migrations require separate environment review; do not apply production SQL as a side effect of a code deployment.
+- Keep changes focused. Preserve financial history; prefer additive migrations and soft voids over destructive edits.
+- Follow [Contributing](CONTRIBUTING.md), [Project Memory](docs/PROJECT_MEMORY.md), and [Progress](PROGRESS.md).
 
-## License
+## License and project policies
 
-MIT
-
----
-
-**Author**: OutLawZ / Brandex Law Associates tooling
-Companion to: [Brandex-Database-CMS](https://github.com/0utLawzz/Brandex-Database-CMS)
+MIT. See [Security](SECURITY.md), [Support](SUPPORT.md), and [Code of Conduct](CODE_OF_CONDUCT.md).

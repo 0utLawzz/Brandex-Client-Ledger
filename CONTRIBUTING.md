@@ -1,47 +1,29 @@
 # Contributing to Brandex Client Ledger
 
-Thank you for helping improve Brandex Client Ledger.
+## Product and data rules
 
-## Development principles
+- Read [`AGENTS.md`](AGENTS.md) and [`docs/PROJECT_MEMORY.md`](docs/PROJECT_MEMORY.md) before changing behavior.
+- Ledger owns charges, receipts, payments, balances, and its client/case identifiers. CMS owns full case details and legal workflow.
+- Trace the complete create → store → display → consume path, including script wrappers, SQL functions, migrations, and CMS callers, before changing a connected flow.
+- Preserve financial history. Prefer additive SQL migrations and soft voids. Never edit a migration already applied to an environment.
+- Avoid dead or duplicate functions; verify every changed function's callers and later-script overrides.
 
-- Keep changes focused and reviewable.
-- Do not mix unrelated features in one change.
-- Preserve existing data compatibility unless a migration is explicitly planned and documented.
-- Avoid destructive changes to user ledger data (prefer soft void / additive columns).
-- Follow the existing Brandex Neo-Brutalism design system (theme is locked).
-- Test UI changes in a desktop browser and a mobile-sized viewport.
-- Prefer small, descriptive commits.
+## Branch, preview, and release
 
-## Pull requests
+1. Make a focused branch from the current `main`.
+2. Commit every code change and push the branch to GitHub.
+3. Review the Vercel preview before merge. Production merge/promotion requires the user's explicit approval of that preview.
+4. Handle database migrations separately: compare applied migration history and target environment first. Do not apply production SQL without explicit approval.
+5. After an approved release, update `CHANGELOG.md`, version/tag, and this status as applicable.
 
-A pull request should include:
+## Review notes
 
-1. A clear description of the problem and the solution.
-2. The exact files changed.
-3. Manual test steps (happy path + at least one edge case).
-4. Any compatibility or data-storage impact (new migration? RLS change?).
-5. Screenshots for significant UI changes.
+Pull requests should describe the user-visible change, the data/schema impact, affected callers and connected systems, and how the change was verified. Add screenshots for meaningful interface changes. Keep unresolved assumptions visible rather than silently choosing a product rule.
 
 ## Commit messages
 
-Prefer short, conventional-style messages:
-
-- `feat: add configurable stages`
-- `fix: exclude voided entries from outstanding`
-- `style: tighten ledger table spacing`
-- `docs: update setup instructions`
-- `db: add migration 004 for …`
-
-## Scope control
-
-Feature work is intentionally incremental. If a change request covers several independent features, split them into separate PRs whenever practical.
-
-## Database changes
-
-- All schema changes must be additive migrations under `supabase/migrations/`.
-- Do not edit already-applied migration files; add a new numbered migration.
-- Update `CHANGELOG.md` and the schema section of `README.md` when the schema changes.
+Use a short, clear prefix such as `feat:`, `fix:`, `style:`, `docs:`, or `db:`.
 
 ## Code of conduct
 
-This project follows [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md). By participating you agree to uphold it.
+This project follows [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
