@@ -104,6 +104,7 @@ $$;
 CREATE OR REPLACE FUNCTION public.assign_case_folder_no()
 RETURNS trigger
 LANGUAGE plpgsql
+SECURITY DEFINER
 SET search_path = ''
 AS $$
 DECLARE
@@ -118,6 +119,8 @@ BEGIN
   RETURN NEW;
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.assign_case_folder_no() FROM PUBLIC, anon, authenticated;
 
 DROP TRIGGER IF EXISTS trg_cases_assign_folder_no ON public.cases;
 CREATE TRIGGER trg_cases_assign_folder_no
