@@ -89,7 +89,7 @@ async function loadSeries() {
 
 async function loadClients() {
   if (sb) {
-    const { data, error } = await sb.from('clients').select('*, series(code), client_stage_rates(*)').order('client_code');
+    const { data, error } = await sb.from('clients').select('*, series(code,name,prefix), client_stage_rates(*)').order('client_code');
     if (error) return toast('Could not load clients: ' + error.message);
     if (data) {
       mem.clients = data;
@@ -252,6 +252,7 @@ async function saveClient() {
     client_code: code,
     client_name: document.getElementById('cName').value.trim(),
     city: document.getElementById('cCity').value.trim(),
+    postal_address: (document.getElementById('cPostalAddress')?.value || '').trim() || null,
     header_balance: Number(document.getElementById('cHeader').value) || 0,
     bank_name: document.getElementById('cBank').value.trim(),
     bank_iban: document.getElementById('cIban').value.trim()
@@ -263,7 +264,12 @@ async function saveClient() {
     S4: Number(document.getElementById('rS4').value) || 0
   };
   if (sb) {
-    const { data, error } = await sb.from('clients').insert(payload).select().single();
+    let { data, error } = await sb.from('clients').insert(payload).select().single();
+    if (error && String(error.message).includes('postal_address')) {
+      delete payload.postal_address;
+      ({ data, error } = await sb.from('clients').insert(payload).select().single());
+      if (!error) toast('Client saved. Mailing address will save after the database migration is applied.');
+    }
     if (error) return toast(error.message);
     const rateRows = Object.entries(rates).map(([stage, amount]) => ({ client_id: data.id, stage, amount }));
     await sb.from('client_stage_rates').upsert(rateRows, { onConflict: 'client_id,stage' });
@@ -312,7 +318,7 @@ async function saveCharge() {
   const amount = Number(document.getElementById('chAmount').value);
   if (!clientId || !amount) return toast('Client and amount required');
   // TM required for S2–S4; Stage 1 (filing) may not have TM yet
-  if (stage !== 'S1' && !tm) return toast('TM number required for ' + stage + ' (allotted from Acknowledgment onward)');
+  if (stage !== 'S1' && !tm) return toast('TRADEMARK NUMBER REQUIRED FOR ' + stage + ' (ALLOTTED FROM ACKNOWLEDGMENT ONWARD)');
 
   const tmNorm = normalizeTM(tm);
   let caseId = null;
@@ -322,22 +328,26 @@ async function saveCharge() {
       let { data: existing } = await sb.from('cases').select('id, application_name, tm_no').eq('tm_no_normalized', tmNorm).eq('client_id', clientId).maybeSingle();
       if (existing) caseId = existing.id;
       else {
-        const { data: created, error } = await sb.from('cases').insert({
+        const casePayload = {
           client_id: clientId, tm_no: tm, folder_no: document.getElementById('chFolder').value.trim() || null
-        }).select().single();
+        };
+        const classNo = document.getElementById('chClass')?.value;
+        if (classNo) casePayload.class_no = Number(classNo);
+        const { data: created, error } = await sb.from('cases').insert(casePayload).select().single();
         if (error) return toast(error.message);
         caseId = created.id;
       }
     } else {
       // Stage 1 pre-TM: placeholder case (folder only)
       const folder = document.getElementById('chFolder').value.trim() || null;
-      const { data: created, error } = await sb.from('cases').insert({
-        client_id: clientId, tm_no: null, folder_no: folder
-      }).select().single();
+      const casePayload = { client_id: clientId, tm_no: null, folder_no: folder };
+      const classNo = document.getElementById('chClass')?.value;
+      if (classNo) casePayload.class_no = Number(classNo);
+      const { data: created, error } = await sb.from('cases').insert(casePayload).select().single();
       if (error) return toast(error.message);
       caseId = created.id;
     }
-    const { error: e2 } = await sb.from('ledger_entries').insert({
+    const chargeRow = {
       client_id: clientId,
       case_id: caseId,
       entry_date: document.getElementById('chDate').value || today(),
@@ -345,7 +355,9 @@ async function saveCharge() {
       stage,
       details: document.getElementById('chDetails').value.trim() || `Stage ${stage} fee`,
       amount_due: amount
-    });
+    };
+    if (window._pendingEvidencePath) chargeRow.evidence_path = window._pendingEvidencePath;
+    const { error: e2 } = await sb.from('ledger_entries').insert(chargeRow);
     if (e2) return toast(e2.message);
     toast('Charge posted');
   } else {
@@ -376,7 +388,7 @@ function bindTMLookup(inputId, infoId) {
       info.innerHTML = '<strong>MATCH</strong> · App: ' + name + ' · Client: ' + client + (data.folder_no ? ' · Folder: ' + data.folder_no : '');
       info.style.borderColor = 'var(--accent2)';
     } else if (el.value.trim()) {
-      info.textContent = 'No existing case for this TM — will create on save';
+      info.textContent = 'No existing case for this Trademark Number — will create on save';
       info.style.borderColor = 'var(--accent3)';
     } else {
       info.textContent = '';
@@ -509,10 +521,10 @@ function exportCSV(selectedOnly) {
   let list = mem.entries;
   if (selectedOnly) list = list.filter(e => selectedRows.has(e.id));
   if (!list.length) return toast('Nothing to export');
-  const header = ['Date','Client','Type','Stage','TM','Details','Amount Due','Amount Received','Receipt No'].map(value => value.toUpperCase());
-  const rows = list.map(e => [e.entry_date||'', e.clients?.client_code||'', e.entry_type, e.stage||'', e.cases?.tm_no||'', (e.details||'').replace(/,/g,' '), e.amount_due||'', e.amount_received||'', e.receipt_no||'']
-    .map(value => typeof value === 'string' ? value.toUpperCase() : value));
-  const csv = [header, ...rows].map(r => r.join(',')).join('\n');
+  const header = ['Date','Client Prefix','Client Code','Client Name','Type','Stage','Trademark Number','Folder Number','Class','Application Name','Details','Amount Due','Amount Received','Receipt No'].map(value => value.toUpperCase());
+  const rows = list.map(e => [e.entry_date||'', e.clients?.series?.code||'', e.clients?.client_code||'', e.clients?.client_name||'', e.entry_type, e.stage||'', e.cases?.tm_no||'', e.cases?.folder_no||'', e.cases?.class_no||'', e.cases?.application_name||'', e.details||'', e.amount_due||'', e.amount_received||'', e.receipt_no||'']);
+  const csvCell = value => '"' + String(value == null ? '' : value).replace(/"/g, '""') + '"';
+  const csv = [header, ...rows].map(row => row.map(csvCell).join(',')).join('\r\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);

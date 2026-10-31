@@ -68,7 +68,7 @@ async function autofillFromTM(prefix) {
     tmEl.closest('.fg')?.appendChild(info) || tmEl.parentElement.appendChild(info);
   }
   if (!data) {
-    info.textContent = tmEl.value.trim() ? 'No existing case for this TM — will create on save' : '';
+    info.textContent = tmEl.value.trim() ? 'No existing case for this Trademark Number — will create on save' : '';
     info.style.borderColor = 'var(--accent3)';
     return;
   }
@@ -354,7 +354,7 @@ saveCharge = async function() {
   const stage = document.getElementById('chStage').value;
   const amount = Number(document.getElementById('chAmount').value);
   if (!clientId || !amount) return toast('Client and amount required');
-  if (stage !== 'S1' && !tm) return toast('TM required for ' + stageLabel(stage));
+  if (stage !== 'S1' && !tm) return toast('TRADEMARK NUMBER REQUIRED FOR ' + stageLabel(stage));
   const tmNorm = normalizeTM(tm);
   const appName = document.getElementById('chAppName')?.value.trim() || null;
   let caseId = null;
@@ -470,6 +470,8 @@ function onEditCaseSelect() {
   document.getElementById('ecTM').value = c.tm_no || '';
   document.getElementById('ecFolder').value = c.folder_no || '';
   document.getElementById('ecAppName').value = c.application_name || '';
+  if (document.getElementById('ecClass')) document.getElementById('ecClass').value = c.class_no || '';
+  if (document.getElementById('ecRibbon')) document.getElementById('ecRibbon').checked = !!c.has_ribbon;
 }
 async function saveEditCase() {
   const id = document.getElementById('ecCaseId').value;
@@ -477,7 +479,9 @@ async function saveEditCase() {
   const { error } = await sb.from('cases').update({
     tm_no: document.getElementById('ecTM').value.trim() || null,
     folder_no: document.getElementById('ecFolder').value.trim() || null,
-    application_name: document.getElementById('ecAppName').value.trim() || null
+    application_name: document.getElementById('ecAppName').value.trim() || null,
+    class_no: document.getElementById('ecClass').value ? Number(document.getElementById('ecClass').value) : null,
+    has_ribbon: document.getElementById('ecRibbon').checked
   }).eq('id', id);
   if (error) return toast(error.message);
   toast('Case updated');

@@ -54,6 +54,7 @@
       document.getElementById('cCity').value = c.city || '';
       if (document.getElementById('cEmail')) document.getElementById('cEmail').value = c.email || '';
       if (document.getElementById('cPhone')) document.getElementById('cPhone').value = c.phone || '';
+      if (document.getElementById('cPostalAddress')) document.getElementById('cPostalAddress').value = c.postal_address || '';
       document.getElementById('cHeader').value = c.header_balance || 0;
       if (c.series_id && document.getElementById('cSeries')) document.getElementById('cSeries').value = c.series_id;
       var rates = (mem.rates && mem.rates[c.id]) || {};
@@ -62,7 +63,7 @@
         if (el) el.value = rates[st] != null ? rates[st] : 0;
       });
     } else {
-      ['cCode','cName','cCity','cEmail','cPhone'].forEach(function (id) {
+      ['cCode','cName','cCity','cEmail','cPhone','cPostalAddress'].forEach(function (id) {
         var el = document.getElementById(id); if (el) el.value = '';
       });
       document.getElementById('cHeader').value = '0';
@@ -84,6 +85,7 @@
       city: document.getElementById('cCity').value.trim(),
       email: (document.getElementById('cEmail') && document.getElementById('cEmail').value.trim()) || null,
       phone: (document.getElementById('cPhone') && document.getElementById('cPhone').value.trim()) || null,
+      postal_address: (document.getElementById('cPostalAddress') && document.getElementById('cPostalAddress').value.trim()) || null,
       header_balance: Number(document.getElementById('cHeader').value) || 0
     };
     var rates = {
@@ -96,16 +98,18 @@
     if (window._editClientId) {
       var res = await sb.from('clients').update(payload).eq('id', window._editClientId).select().single();
       data = res.data; error = res.error;
-      if (error && (String(error.message).includes('email') || String(error.message).includes('phone'))) {
-        delete payload.email; delete payload.phone;
+      if (error && (String(error.message).includes('email') || String(error.message).includes('phone') || String(error.message).includes('postal_address'))) {
+        if (String(error.message).includes('postal_address')) delete payload.postal_address;
+        if (String(error.message).includes('email') || String(error.message).includes('phone')) { delete payload.email; delete payload.phone; }
         res = await sb.from('clients').update(payload).eq('id', window._editClientId).select().single();
         data = res.data; error = res.error;
       }
     } else {
       var res2 = await sb.from('clients').insert(payload).select().single();
       data = res2.data; error = res2.error;
-      if (error && (String(error.message).includes('email') || String(error.message).includes('phone'))) {
-        delete payload.email; delete payload.phone;
+      if (error && (String(error.message).includes('email') || String(error.message).includes('phone') || String(error.message).includes('postal_address'))) {
+        if (String(error.message).includes('postal_address')) delete payload.postal_address;
+        if (String(error.message).includes('email') || String(error.message).includes('phone')) { delete payload.email; delete payload.phone; }
         res2 = await sb.from('clients').insert(payload).select().single();
         data = res2.data; error = res2.error;
       }
@@ -114,8 +118,11 @@
     var rateRows = Object.keys(rates).map(function (stage) {
       return { client_id: data.id, stage: stage, amount: rates[stage] };
     });
-    await sb.from('client_stage_rates').upsert(rateRows, { onConflict: 'client_id,stage' });
-    toast(window._editClientId ? 'Client updated' : 'Client saved');
+    var rateSave = await sb.from('client_stage_rates').upsert(rateRows, { onConflict: 'client_id,stage' });
+    if (rateSave.error) return toast('CLIENT SAVED, BUT STAGE RATES FAILED: ' + rateSave.error.message);
+    toast(!('postal_address' in payload) && document.getElementById('cPostalAddress').value.trim()
+      ? 'CLIENT SAVED. POSTAL ADDRESS NEEDS THE DATABASE MIGRATION.'
+      : (window._editClientId ? 'Client updated' : 'Client saved'));
     window._editClientId = null;
     closeModal('modalClient');
     await loadClients();
@@ -201,7 +208,8 @@
       sub.innerHTML = '<div class="ledger-profile"><div class="ledger-profile-copy"><h2 class="ledger-client-name">' + clientDisplayText(c.client_name || 'Unnamed client') + '</h2>' +
         '<dl class="ledger-contact"><div><dt>City</dt><dd>' + clientDisplayText(c.city || 'Not provided') + '</dd></div>' +
         '<div><dt>Phone</dt><dd>' + clientDisplayText(c.phone || 'Not provided') + '</dd></div>' +
-        '<div><dt>Email</dt><dd>' + clientDisplayText(c.email || 'Not provided') + '</dd></div></dl></div>' +
+        '<div><dt>Email</dt><dd>' + clientDisplayText(c.email || 'Not provided') + '</dd></div>' +
+        '<div class="postal-address"><dt>Mailing / Postal Address</dt><dd>' + clientDisplayText(c.postal_address || 'Not provided') + '</dd></div></dl></div>' +
         '<div class="ledger-balance ' + (bal > 0 ? 'neg' : 'pos') + '"><span>' + (bal > 0 ? 'Outstanding balance' : bal < 0 ? 'Credit balance' : 'Settled balance') + '</span><div><small>PKR</small><strong>' + fmt(bal) + '</strong></div><p>Opening + charges − received</p></div></div>' +
         '<dl class="ledger-summary"><div><dt>Opening balance</dt><dd><small>PKR</small> ' + fmt(c.header_balance || 0) + '</dd></div>' +
         '<div><dt>Total charged</dt><dd><small>PKR</small> ' + fmt(due) + '</dd></div>' +
@@ -248,14 +256,14 @@
       var stage = document.getElementById('chStage').value;
       var amount = Number(document.getElementById('chAmount').value);
       if (!clientId || !amount) return toast('Client and amount required');
-      if (stage !== 'S1' && !tm) return toast('TM required for ' + (typeof stageLabel === 'function' ? stageLabel(stage) : stage));
+      if (stage !== 'S1' && !tm) return toast('TRADEMARK NUMBER REQUIRED FOR ' + (typeof stageLabel === 'function' ? stageLabel(stage) : stage));
       if (!sb) return toast('Supabase required');
       var tmNorm = typeof normalizeTM === 'function' ? normalizeTM(tm) : (tm ? String(tm).replace(/[^0-9]/g, '') : null);
       if (tmNorm) {
         var q = await sb.from('cases').select('id, client_id, tm_no, clients(client_code, client_name)').eq('tm_no_normalized', tmNorm).maybeSingle();
         if (q.data && q.data.client_id !== clientId) {
           var owner = q.data.clients ? ((q.data.clients.client_code || '') + ' — ' + (q.data.clients.client_name || '')) : 'another client';
-          return toast('TM ' + tm + ' already belongs to ' + owner + '. Cannot add to this ledger.');
+          return toast('TRADEMARK NUMBER ' + tm + ' ALREADY BELONGS TO ' + owner + '. CANNOT ADD TO THIS LEDGER.');
         }
       }
       if (tmNorm && stage) {
@@ -269,7 +277,7 @@
           });
           var want = STAGE_ORDER[stage] || 0;
           if (want < maxOrd) {
-            return toast('Stages only move forward. Highest stage on this TM is Stage ' + maxOrd + '. Cannot post Stage ' + want + '.');
+            return toast('STAGES ONLY MOVE FORWARD. HIGHEST STAGE ON THIS CASE IS STAGE ' + maxOrd + '. CANNOT POST STAGE ' + want + '.');
           }
         }
       }
@@ -288,7 +296,7 @@
           var q = await sb.from('cases').select('id, client_id, clients(client_code, client_name)').eq('tm_no_normalized', tmNorm).maybeSingle();
           if (q.data && q.data.client_id !== clientId) {
             var owner = q.data.clients ? ((q.data.clients.client_code || '') + ' — ' + (q.data.clients.client_name || '')) : 'another client';
-            return toast('TM ' + tm + ' belongs to ' + owner + '. Cannot receive against it here.');
+          return toast('TRADEMARK NUMBER ' + tm + ' BELONGS TO ' + owner + '. CANNOT RECEIVE AGAINST IT HERE.');
           }
         }
       }
@@ -525,6 +533,7 @@
       var due = charges.reduce(function (sum, entry) {
         return sum + (entry.stage === stage ? Number(entry.amount_due || 0) : 0);
       }, 0);
+      var hasCharge = charges.some(function (entry) { return entry.stage === stage; });
       var direct = receipts.reduce(function (sum, entry) {
         if (entry.linked_entry_id) {
           var linkedCharge = charges.find(function (charge) { return charge.id === entry.linked_entry_id; });
@@ -538,7 +547,8 @@
         due: due,
         received: direct + generalApplied,
         outstanding: Math.max(due - direct - generalApplied, 0),
-        paid: due > 0 && direct + generalApplied >= due
+        charged: hasCharge,
+        paid: hasCharge && (due === 0 || direct + generalApplied >= due)
       };
     });
 
@@ -567,7 +577,7 @@
       var totals = caseStageTotals(id);
       var searchable = [caseRow.tm_no, caseRow.folder_no, caseRow.application_name].join(' ').toUpperCase();
       var activeStages = Object.keys(totals.stages).filter(function (stage) {
-        return totals.stages[stage].due > 0;
+        return totals.stages[stage].charged;
       });
       var isCleared = activeStages.length > 0 && activeStages.every(function (stage) {
         return totals.stages[stage].paid;
@@ -575,7 +585,8 @@
       var hasOutstanding = activeStages.some(function (stage) {
         return !totals.stages[stage].paid;
       });
-      return { item: caseRow, id: id, totals: totals, stages: activeStages, cleared: isCleared, hasOutstanding: hasOutstanding, searchable: searchable };
+      var completed = activeStages.indexOf('S4') !== -1 && isCleared;
+      return { item: caseRow, id: id, totals: totals, stages: activeStages, cleared: isCleared, completed: completed, hasOutstanding: hasOutstanding, searchable: searchable };
     }).filter(function (row) {
       if (query && row.searchable.indexOf(query) === -1) return false;
       if (selectedStage && row.stages.indexOf(selectedStage) === -1) return false;
@@ -591,19 +602,25 @@
         return sum + row.totals.stages[stage].outstanding;
       }, 0);
       var badges = row.stages.length ? row.stages.map(function (stage) {
-        return '<span class="case-status ' + (row.totals.stages[stage].paid ? 'cleared' : 'outstanding') + '">' +
-          stage + ' ' + (row.totals.stages[stage].paid ? 'CLEARED' : 'DUE') + '</span>';
+        var status = row.totals.stages[stage];
+        return '<button type="button" class="case-status ' + (status.paid ? 'cleared' : 'outstanding') + ' case-stage-link" data-case-stage="' + stage + '" data-case-id="' + escapeHTML(row.id) + '" title="DUE PKR ' + fmt(status.due) + ' · RECEIVED PKR ' + fmt(status.received) + ' · OUTSTANDING PKR ' + fmt(status.outstanding) + '">' +
+          stage + ' ' + (status.paid ? 'CLEARED' : 'DUE') + ' · ' + fmt(status.due) + '/' + fmt(status.received) + '</button>';
       }).join(' ') : '<span class="case-status">NO CHARGES</span>';
-      return '<tr data-case-id="' + escapeHTML(row.id) + '">' +
-        '<td><strong>' + escapeHTML(row.item.tm_no || 'NO TM') + '</strong></td>' +
+      var classNo = row.item.class_no ? Number(row.item.class_no) : null;
+      var classChip = classNo ? '<span class="entry-class-chip class-color-' + ((classNo - 1) % 6 + 1) + '">' + classNo + '</span>' : '—';
+      var ribbon = row.item.has_ribbon ? '<span class="case-ribbon">🎗 RIBBON</span>' : '';
+      var completedLabel = row.completed ? '<span class="case-complete-label">COMPLETED</span><br>' : '';
+      return '<tr data-case-id="' + escapeHTML(row.id) + '" class="' + (row.completed ? 'case-completed-row' : '') + '">' +
+        '<td>' + completedLabel + '<strong>' + escapeHTML(row.item.tm_no || 'NO TRADEMARK NUMBER') + '</strong>' + ribbon + '</td>' +
         '<td>' + escapeHTML(row.item.folder_no || '—') + '</td>' +
         '<td>' + escapeHTML(row.item.application_name || '—') + '</td>' +
         '<td>' + badges + '</td>' +
+        '<td>' + classChip + '</td>' +
         '<td class="amt-due">' + fmt(outstanding) + '</td>' +
         '<td><button class="btn sm open-case-placeholder" type="button" disabled title="FULL CASE VIEW WILL CONNECT HERE WHEN THE CASE SYSTEM IS READY" aria-label="Open case: case system connection coming soon">OPEN CASE</button><span class="case-link-note">COMING SOON</span></td>' +
         '</tr>';
     }).join('');
-    if (!cases.length) body.innerHTML = '<tr><td colspan="6" class="empty">NO CASES MATCH THESE FILTERS</td></tr>';
+    if (!cases.length) body.innerHTML = '<tr><td colspan="7" class="empty">NO CASES MATCH THESE FILTERS</td></tr>';
   }
 
   function renderStageOutstanding(rows) {
@@ -648,6 +665,7 @@
     var query = String(document.getElementById('ledgerEntrySearch').value || '').trim().toUpperCase();
     var type = document.getElementById('ledgerEntryType').value;
     var stage = document.getElementById('ledgerEntryStage').value;
+    var classNo = document.getElementById('ledgerEntryClass') && document.getElementById('ledgerEntryClass').value;
     var rows = window._ledgerRows || [];
     return rows.filter(function (entry) {
       if (caseId && (!entry.cases || entry.cases.id !== caseId)) return false;
@@ -656,6 +674,7 @@
       if (type && entry.entry_type !== type) return false;
       if (stage === 'general' && entry.stage) return false;
       if (stage && stage !== 'general' && entry.stage !== stage) return false;
+      if (classNo && String(entry.cases && entry.cases.class_no || '') !== classNo) return false;
       if (query) {
         var client = (mem.clients || []).find(function (item) { return item.id === entry.client_id; }) || {};
         var searchable = [entry.entry_date, entry.entry_type, entry.stage, entry.details, entry.payment_method,
@@ -681,7 +700,7 @@
     var field = document.getElementById(id);
     if (field) field.addEventListener('change', refreshLedgerFilters);
   });
-  ['ledgerEntryType', 'ledgerEntryStage'].forEach(function (id) {
+  ['ledgerEntryType', 'ledgerEntryStage', 'ledgerEntryClass'].forEach(function (id) {
     var field = document.getElementById(id);
     if (field) field.addEventListener('change', refreshLedgerFilters);
   });
@@ -689,7 +708,7 @@
   if (entrySearch) entrySearch.addEventListener('input', refreshLedgerFilters);
   var clearEntryFilters = document.getElementById('clearLedgerEntryFilters');
   if (clearEntryFilters) clearEntryFilters.addEventListener('click', function () {
-    ['ledgerEntrySearch', 'ledgerEntryType', 'ledgerEntryStage', 'ledgerCaseFilter', 'ledgerDateFrom', 'ledgerDateTo'].forEach(function (id) {
+    ['ledgerEntrySearch', 'ledgerEntryType', 'ledgerEntryStage', 'ledgerEntryClass', 'ledgerCaseFilter', 'ledgerDateFrom', 'ledgerDateTo'].forEach(function (id) {
       var field = document.getElementById(id);
       if (field) field.value = '';
     });
@@ -781,7 +800,7 @@
     if (!area) return toast('PRINT AREA MISSING');
     area.innerHTML = '<div class="ack-sheet print-document">' + window.BRANDEX_PRINT_HEADER('CHARGE RECEIPT') +
       '<div class="print-group"><div class="print-group-title">CLIENT</div><div class="print-big">' + escapeHTML(client.client_code || '—') + '</div><div class="print-big-sub">' + escapeHTML(client.client_name || '—') + '</div></div>' +
-      '<div class="print-group"><div class="print-group-title">CASE DETAILS</div><div class="ack-row"><span>TM / FOLDER</span><strong>' + escapeHTML(tm) + '</strong></div><div class="ack-row"><span>APPLICATION</span><strong>' + escapeHTML(entry.cases && entry.cases.application_name || '—') + '</strong></div><div class="ack-row"><span>STAGE</span><strong>' + escapeHTML(entry.stage || 'GENERAL') + '</strong></div><div class="ack-row"><span>DATE</span><strong>' + escapeHTML(entry.entry_date || '') + '</strong></div></div>' +
+      '<div class="print-group"><div class="print-group-title">CASE DETAILS</div><div class="ack-row"><span>TRADEMARK NUMBER / FOLDER</span><strong>' + escapeHTML(tm) + '</strong></div><div class="ack-row"><span>CLASS</span><strong>' + escapeHTML(entry.cases && entry.cases.class_no || '—') + '</strong></div><div class="ack-row"><span>APPLICATION</span><strong>' + escapeHTML(entry.cases && entry.cases.application_name || '—') + '</strong></div><div class="ack-row"><span>STAGE</span><strong>' + escapeHTML(entry.stage || 'GENERAL') + '</strong></div><div class="ack-row"><span>DATE</span><strong>' + escapeHTML(entry.entry_date || '') + '</strong></div></div>' +
       '<div class="ack-row"><span>DETAILS</span><strong>' + escapeHTML(entry.details || '—') + '</strong></div><div class="ack-row total"><span>AMOUNT DUE</span><strong>PKR ' + fmt(entry.amount_due) + '</strong></div>' + window.BRANDEX_PRINT_FOOTER() + '</div>';
     area.style.display = 'block';
     document.title = 'CHARGE_' + String(entry.id).slice(0, 8) + '_A4';
@@ -852,17 +871,28 @@
       }
     }
     if (request !== stageOptionRequest) return;
+    var status = caseId ? caseStageTotals(caseId).stages : null;
+    var charged = status ? ['S1','S2','S3','S4'].filter(function (stage) { return status[stage].charged; }) : [];
+    var highest = charged.length ? Number(charged[charged.length - 1].slice(1)) : 0;
     Array.prototype.forEach.call(stageSelect.options, function (option) {
-      if (!/^S[2-4]$/.test(option.value)) {
-        option.disabled = false;
+      var order = STAGE_ORDER[option.value] || 0;
+      if (!order) { option.disabled = false; return; }
+      if (!caseId || !charged.length) { option.disabled = false; return; }
+      if (prefix === 'rc') {
+        option.disabled = !status[option.value].charged || status[option.value].outstanding <= 0;
         return;
       }
-      var previous = 'S' + (Number(option.value.slice(1)) - 1);
-      var stageStatus = caseId ? caseStageTotals(caseId).stages[previous] : null;
-      option.disabled = !stageStatus || !stageStatus.paid;
+      if (order < highest) option.disabled = true;
+      else if (order === highest) option.disabled = !!status[option.value].paid;
+      else if (order === highest + 1) option.disabled = !status['S' + highest].paid;
+      else option.disabled = true;
     });
     if (stageSelect.selectedOptions[0] && stageSelect.selectedOptions[0].disabled) {
-      stageSelect.value = prefix === 'rc' ? '' : 'S1';
+      if (prefix === 'rc') stageSelect.value = '';
+      else {
+        var nextAvailable = Array.prototype.find.call(stageSelect.options, function (option) { return !option.disabled && STAGE_ORDER[option.value]; });
+        if (nextAvailable) stageSelect.value = nextAvailable.value;
+      }
     }
   }
 
@@ -900,26 +930,39 @@
   if (typeof priorSaveCharge === 'function') {
     window.saveCharge = async function () {
       var stage = document.getElementById('chStage').value;
-      if (stage !== 'S1') {
-        var tm = normalizeTM(document.getElementById('chTM').value);
-        var caseEntry = (mem.entries || []).find(function (entry) {
-          return entry.cases && normalizeTM(entry.cases.tm_no) === tm;
-        });
-        if (!caseEntry) {
-          var lookup = await lookupCaseByTM(document.getElementById('chTM').value);
-          if (lookup && lookup.id) {
-            var totals = caseStageTotals(lookup.id);
-            var previousStage = 'S' + (Number(stage.slice(1)) - 1);
-            if (!totals.stages[previousStage] || !totals.stages[previousStage].paid) {
-              return toast(previousStage + ' MUST BE FULLY CLEARED BEFORE ' + stage);
-            }
-          }
-        } else {
-          var stageStatus = caseStageTotals(caseEntry.cases.id).stages['S' + (Number(stage.slice(1)) - 1)];
-          if (!stageStatus || !stageStatus.paid) return toast('PREVIOUS STAGE MUST BE FULLY CLEARED FIRST');
+      var tm = normalizeTM(document.getElementById('chTM').value);
+      var clientId = document.getElementById('chClient').value;
+      var knownEntry = (mem.entries || []).find(function (entry) {
+        return entry.client_id === clientId && entry.cases && normalizeTM(entry.cases.tm_no) === tm;
+      });
+      var knownCase = (mem.cases || []).find(function (row) {
+        return row.client_id === clientId && normalizeTM(row.tm_no) === tm;
+      });
+      var caseId = (knownEntry && knownEntry.cases.id) || (knownCase && knownCase.id);
+      if (!caseId && tm) {
+        var lookup = await lookupCaseByTM(document.getElementById('chTM').value);
+        if (lookup && lookup.client_id === clientId) caseId = lookup.id;
+      }
+      if (caseId) {
+        var stageState = caseStageTotals(caseId).stages;
+        var charged = ['S1','S2','S3','S4'].filter(function (name) { return stageState[name].charged; });
+        if (charged.length) {
+          var highest = Number(charged[charged.length - 1].slice(1));
+          var wanted = STAGE_ORDER[stage] || 0;
+          if (wanted < highest) return toast('STAGES ONLY MOVE FORWARD. THIS CASE HAS ALREADY REACHED ' + charged[charged.length - 1] + '.');
+          if (wanted > highest + 1) return toast('COMPLETE AND CLEAR THE NEXT STAGE BEFORE MOVING FORWARD.');
+          if (wanted > highest && !stageState['S' + highest].paid) return toast('CLEAR ' + charged[charged.length - 1] + ' BEFORE CHARGING ' + stage + '.');
+          if (wanted === highest && stageState[stage].paid) return toast(stage + ' IS ALREADY CLEARED. SELECT THE NEXT FORWARD STAGE.');
+          if (wanted === highest && stageState[stage].charged && !confirm('AN ACTIVE CHARGE ALREADY EXISTS FOR ' + stage + '. ADD ANOTHER CHARGE TO THIS STAGE?')) return;
         }
       }
-      return priorSaveCharge.apply(this, arguments);
+      var result = await priorSaveCharge.apply(this, arguments);
+      var selectedClass = document.getElementById('chClass').value;
+      if (caseId && selectedClass && sb) {
+        var classUpdate = await sb.from('cases').update({ class_no: Number(selectedClass) }).eq('id', caseId);
+        if (classUpdate.error) toast('CHARGE SAVED; CLASS UPDATE NEEDS DATABASE MIGRATION: ' + classUpdate.error.message);
+      }
+      return result;
     };
   }
 
@@ -931,11 +974,18 @@
       var cases = [];
       if (!sb) return;
       for (var entryOffset = 0; ; entryOffset += pageSize) {
-        var entryResult = await sb.from('ledger_entries')
-          .select('*, clients(client_code, client_name, email, phone, city), cases(id, tm_no, folder_no, application_name)')
+        var entryQuery = sb.from('ledger_entries')
+          .select('*, clients(client_code, client_name, email, phone, city, postal_address, series(code,name,prefix)), cases(id, tm_no, folder_no, application_name, class_no, has_ribbon)')
           .order('entry_date', { ascending: false })
           .order('created_at', { ascending: false })
           .range(entryOffset, entryOffset + pageSize - 1);
+        var entryResult = await entryQuery;
+        if (entryResult.error && /postal_address|class_no|has_ribbon|evidence_path|column .* does not exist/i.test(entryResult.error.message || '')) {
+          entryResult = await sb.from('ledger_entries')
+            .select('*, clients(client_code, client_name, email, phone, city, series(code,name,prefix)), cases(id, tm_no, folder_no, application_name)')
+            .order('entry_date', { ascending: false }).order('created_at', { ascending: false })
+            .range(entryOffset, entryOffset + pageSize - 1);
+        }
         if (entryResult.error) {
           toast('LEDGER ENTRIES COULD NOT BE LOADED: ' + entryResult.error.message);
           return;
@@ -945,9 +995,13 @@
       }
       for (var caseOffset = 0; ; caseOffset += pageSize) {
         var result = await sb.from('cases')
-          .select('id, client_id, tm_no, folder_no, application_name, status')
+          .select('id, client_id, tm_no, folder_no, application_name, status, class_no, has_ribbon')
           .order('created_at', { ascending: false })
           .range(caseOffset, caseOffset + pageSize - 1);
+        if (result.error && /class_no|has_ribbon|column .* does not exist/i.test(result.error.message || '')) {
+          result = await sb.from('cases').select('id, client_id, tm_no, folder_no, application_name, status')
+            .order('created_at', { ascending: false }).range(caseOffset, caseOffset + pageSize - 1);
+        }
         if (result.error) {
           toast('CASES COULD NOT BE LOADED: ' + result.error.message);
           return;

@@ -59,7 +59,7 @@ These flows are loaded across `index.html`, `app.js`, `gaps.js`, `gaps-print.js`
 ### Observed in current code or database migrations
 
 - The current Add Record flow combines case lookup/creation and charge creation. Add Receiving can also create a case.
-- Stage gates are implemented in multiple browser script layers. `brand-patch.js` and `phase2.js` wrap `saveCharge()` and calculate prior-stage payment state; the interface therefore currently expects earlier stages to clear before later-stage charges. That conflicts with the confirmed later-stage-entry rule and needs a focused behavior audit before any workflow implementation.
+- Stage gates are implemented across browser scripts and the proposed migration. The feature branch updates the active browser path and adds a matching database gate that permits later starts and forward-only progression; it still requires preview validation.
 - Receipt numbers are assembled in browser code (`R-` plus a timestamp) in the current save flow. Do not assume database-enforced uniqueness/sequencing without verifying the deployed schema.
 - The `get_stage_payment_status(text)` RPC was corrected in migration 006 for zero-due stage status and restricted to `service_role` execution; authenticated and anonymous direct execution are revoked in the migration.
 - Migrations 001–006 are present locally. The live project's migration history previously inspected in the October 2026 work did not list all of these migrations in the same form/order (it showed entries named `cms_stage_payment_bridge` and `fix_zero_charge_stage_payment_status`). Treat migration-history reconciliation as an operational risk; do not replay, rename, or rewrite historical migrations without inspecting the live environment.
@@ -67,7 +67,7 @@ These flows are loaded across `index.html`, `app.js`, `gaps.js`, `gaps-print.js`
 - The CMS repository currently contains an older CMS-local ledger schema/integration attempt and documentation that disagrees with this confirmed boundary. PRs #6 and #10 were closed without merging; their branches were preserved. CMS code/data was not altered by closing them.
 - The Ledger has controls to show and restore inactive clients. Charge and receiving selectors omit inactive clients; archived accounts retain their Ledger history.
 
-### Decisions still needed before feature implementation
+### Earlier product questions (revisit only when relevant)
 
 1. What exact minimum fields are mandatory when creating a Ledger case, and can the initial entry be created before the first charge/payment?
 2. How should the app represent the case's actual starting stage so the next permitted stage is unambiguous? Existing financial stages S1–S4 and the case's current workflow stage may be distinct concepts.
@@ -75,7 +75,7 @@ These flows are loaded across `index.html`, `app.js`, `gaps.js`, `gaps-print.js`
 4. Should a receiving create a case when none exists, or must it link to an existing Ledger case/client balance? Current code allows case creation in a receiving path.
 5. Which CMS deployment/database is the target for the future one-way payment-status read, and what trusted server mechanism will authenticate it?
 
-These are implementation questions, not a speculative roadmap. Keep them unresolved until they affect a concrete requested feature.
+These were open product questions in the baseline review. The post-release changes below record the scoped choices made for this feature branch; revisit only when a concrete need arises.
 
 ## Current repository and release baseline
 
@@ -100,8 +100,8 @@ These are implementation questions, not a speculative roadmap. Keep them unresol
 
 Update this file when the user confirms a product rule or when inspected behavior materially changes. Mark the evidence as **user-confirmed**, **source-inspected**, or **environment-verified**. Do not turn unresolved questions into assumed requirements, and do not add broad feature roadmaps here.
 
-## Post-release handover (2026-11-01)
+## Post-release implementation (2026-11-01)
 
-The user explicitly asked for a handover document only because the available usage was nearly exhausted. Do not implement the following annotation requests or workflow changes as part of that handover. They remain pending for a later, scoped review. See [the full handover](handovers/2026-11-01-post-release-handover.md).
+The user subsequently asked to complete the handover. App/UI updates and additive migration proposal are on `feature/post-release-annotations`; migration is not applied to production. See [implementation state and review steps](handovers/2026-11-01-post-release-handover.md). Supabase branching was unavailable on the connected plan, so preview database verification is still needed. Drive Picker remains outside the implementation because Google OAuth/API configuration is not available.
 
-User-confirmed workflow concerns to resolve before changing behavior: a client-specific ledger should not offer switching to another client; add a class selector with values 1–45; case stage progression must be forward-only from its actual starting stage; and stage completion must be visibly linked to its charge/payment records so duplicate stage charges can be detected or corrected safely.
+The user-confirmed workflow rules are implemented on `feature/post-release-annotations`: client selectors are pinned in client-ledger context, Class 1–45 is case-level, stage progression is forward-only from the actual starting stage, and case-stage summaries expose charge/payment details. Preview review and isolated DB migration remain outstanding.
