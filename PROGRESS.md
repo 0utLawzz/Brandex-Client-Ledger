@@ -6,6 +6,7 @@
 
 **Code baseline:** `main` at `4ee151f` (PR #7, deployed 1 November 2026).
 **Release:** `v0.3.0` approved and deployed to production.
+**Pending handover:** [Post-release annotations and workflow review](docs/handovers/2026-11-01-post-release-handover.md).
 
 ## Current baseline
 
@@ -26,6 +27,7 @@
 - [x] Added public Brandex contact/social footer and M. Nadeem design/build credit.
 - [x] Review the Vercel preview and approve production release.
 - [x] Merge PR #7 to `main`, deploy production, and create tag `v0.3.0`.
+- [ ] Review the post-release annotations and workflow concerns listed in the handover. No implementation has started.
 
 ## Known mismatches and operational cautions
 

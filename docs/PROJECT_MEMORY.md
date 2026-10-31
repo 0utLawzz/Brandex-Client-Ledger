@@ -99,3 +99,9 @@ These are implementation questions, not a speculative roadmap. Keep them unresol
 ## Memory maintenance
 
 Update this file when the user confirms a product rule or when inspected behavior materially changes. Mark the evidence as **user-confirmed**, **source-inspected**, or **environment-verified**. Do not turn unresolved questions into assumed requirements, and do not add broad feature roadmaps here.
+
+## Post-release handover (2026-11-01)
+
+The user explicitly asked for a handover document only because the available usage was nearly exhausted. Do not implement the following annotation requests or workflow changes as part of that handover. They remain pending for a later, scoped review. See [the full handover](handovers/2026-11-01-post-release-handover.md).
+
+User-confirmed workflow concerns to resolve before changing behavior: a client-specific ledger should not offer switching to another client; add a class selector with values 1–45; case stage progression must be forward-only from its actual starting stage; and stage completion must be visibly linked to its charge/payment records so duplicate stage charges can be detected or corrected safely.
