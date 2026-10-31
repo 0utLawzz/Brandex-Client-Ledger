@@ -337,9 +337,9 @@
     if (old) old.remove();
     var s = document.createElement('style');
     s.id = 'bx-print-fix';
-    var D = '#8B3A00';
-    var G = '#0D9970';
-    var O = '#C94A00';
+    var D = '#293A50';
+    var G = '#0F766E';
+    var O = '#C63D33';
     s.textContent =
       '@media print{' +
       '.navbar,.tb,.lh-actions,.no-print,.ni,.nb-stats,.nb-nav,.main,.page,.mo,.toast{display:none!important;}' +
@@ -355,7 +355,7 @@
       '.ack-page{page-break-after:always;}.ack-page:last-child{page-break-after:auto;}' +
       '}' +
       '#printArea{display:none;}' +
-      '.ack-sheet{border:3px solid ' + D + '!important;color:' + D + '!important;}' +
+      '.ack-sheet{border:1px solid #CBD5E1!important;border-top:4px solid ' + O + '!important;color:' + D + '!important;box-shadow:none!important;padding:16px!important;max-width:none!important;}' +
       '.print-card-wrap{margin-bottom:10px;border-bottom:2px solid ' + O + ';padding-bottom:8px;}' +
       '.print-logo-sm{width:36px;height:36px;border-radius:50%;border:2px solid ' + D + ';object-fit:cover;flex-shrink:0;}' +
       '.print-head-row{display:flex;align-items:center;gap:10px;}' +
@@ -739,7 +739,7 @@
           '<td><span class="entry-kind ' + escapeHTML(entry.entry_type) + '">' + (voided ? 'VOID · ' : '') + type + '</span></td>' +
           '<td>' + stageBadge(entry.stage) + '</td>' +
           '<td class="folder-no">' + escapeHTML(entry.cases && (entry.cases.tm_no || entry.cases.folder_no || entry.cases.application_name) || '—') + '</td>' +
-          '<td>' + escapeHTML(entry.details || '') + (entry.payment_method ? ' · ' + escapeHTML(entry.payment_method) : '') + '</td>' +
+          '<td>' + escapeHTML(entry.details || '') + '</td>' +
           '<td class="amt-due">' + (entry.amount_due ? fmt(entry.amount_due) : '') + '</td>' +
           '<td class="amt-rec">' + (entry.amount_received ? fmt(entry.amount_received) : '') + '</td>' +
           '<td class="no-print">' + entryActionMenu(entry) + '</td></tr>';
@@ -777,17 +777,15 @@
     if (entry.entry_type === 'receiving' && typeof printAck === 'function') return printAck(entry.id);
     var client = (mem.clients || []).find(function (row) { return row.id === entry.client_id; }) || {};
     var tm = entry.cases && (entry.cases.tm_no || entry.cases.folder_no || entry.cases.application_name) || '—';
-    var receipt = '<main class="receipt-box"><h1>BRANDEX LAW ASSOCIATE</h1><div class="sub">CHARGE RECORD</div>' +
-      '<p>DATE <strong>' + escapeHTML(entry.entry_date || '') + '</strong></p>' +
-      '<p>CLIENT <strong>' + escapeHTML(client.client_code || '') + ' · ' + escapeHTML(client.client_name || '') + '</strong></p>' +
-      '<p>CASE / TM <strong>' + escapeHTML(tm) + '</strong></p>' +
-      '<p>STAGE <strong>' + escapeHTML(entry.stage || 'GENERAL') + '</strong></p>' +
-      '<p>DETAILS <strong>' + escapeHTML(entry.details || '') + '</strong></p>' +
-      '<p class="total">AMOUNT DUE <strong>PKR ' + fmt(entry.amount_due) + '</strong></p></main>';
-    var popup = window.open('', '_blank', 'width=520,height=650');
-    if (!popup) return toast('ALLOW POP-UPS TO PRINT THIS CHARGE');
-    popup.document.write('<!doctype html><html><head><title>CHARGE</title><style>body{font:14px Arial;padding:24px;text-transform:uppercase}.receipt-box{border:3px solid #0C0C0C;padding:24px;max-width:440px;margin:auto}.sub{text-align:center;color:#8B3A00;font-weight:bold}.total{border-top:3px solid #0C0C0C;padding-top:14px;color:#8B3A00}</style></head><body>' + receipt + '<script>window.print()<\\/script></body></html>');
-    popup.document.close();
+    var area = document.getElementById('printArea');
+    if (!area) return toast('PRINT AREA MISSING');
+    area.innerHTML = '<div class="ack-sheet print-document"><h1 class="print-document-title">CHARGE RECEIPT</h1>' +
+      '<div class="print-group"><div class="print-group-title">CLIENT</div><div class="print-big">' + escapeHTML(client.client_code || '—') + '</div><div class="print-big-sub">' + escapeHTML(client.client_name || '—') + '</div></div>' +
+      '<div class="print-group"><div class="print-group-title">CASE DETAILS</div><div class="ack-row"><span>TM / FOLDER</span><strong>' + escapeHTML(tm) + '</strong></div><div class="ack-row"><span>APPLICATION</span><strong>' + escapeHTML(entry.cases && entry.cases.application_name || '—') + '</strong></div><div class="ack-row"><span>STAGE</span><strong>' + escapeHTML(entry.stage || 'GENERAL') + '</strong></div><div class="ack-row"><span>DATE</span><strong>' + escapeHTML(entry.entry_date || '') + '</strong></div></div>' +
+      '<div class="ack-row"><span>DETAILS</span><strong>' + escapeHTML(entry.details || '—') + '</strong></div><div class="ack-row total"><span>AMOUNT DUE</span><strong>PKR ' + fmt(entry.amount_due) + '</strong></div></div>';
+    area.style.display = 'block';
+    document.title = 'CHARGE_' + String(entry.id).slice(0, 8) + '_A4';
+    setTimeout(function () { window.print(); area.style.display = 'none'; area.innerHTML = ''; document.title = 'BRANDEX LAW ASSOCIATE — CLIENT LEDGER'; }, 200);
   }
 
   function openEntryEdit(entry) {
@@ -1123,7 +1121,7 @@
         '<td><span class="entry-kind ' + escape(entry.entry_type) + '">' + (voided ? 'VOID · ' : '') + (entry.entry_type === 'receiving' ? 'PAYMENT' : 'CHARGE') + '</span></td>' +
         '<td>' + stageBadge(entry.stage) + '</td><td class="folder-no"><strong>' + escape(tm) + '</strong></td>' +
         '<td class="application-cell">' + escape(app) + '</td>' +
-        '<td>' + escape(entry.details || '') + (entry.payment_method ? ' · ' + escape(entry.payment_method) : '') + '</td>' +
+          '<td>' + escape(entry.details || '') + '</td>' +
         '<td class="amt-due">' + (entry.amount_due ? fmt(entry.amount_due) : '') + '</td><td class="amt-rec">' + (entry.amount_received ? fmt(entry.amount_received) : '') + '</td>' +
         '<td class="no-print">' + actions + '</td></tr>';
     }).join('');

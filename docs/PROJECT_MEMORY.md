@@ -40,8 +40,9 @@ charge 1 ── many? receiving links by linked_entry_id (optional)
 - Clients: client list/search and account ledger.
 - Cases/folders: TM/case list, filters, dates, stages, payment states.
 - Stage summary and reports: charges, applied receipts, outstanding amounts.
-- Receipt and print views: individual receiving acknowledgments and account reports.
+- Receipt and print views: individual charge receipts, receiving acknowledgments, client ledgers, and selected/grouped reports. These share one A4 style without an app branding header/footer; payment method remains stored but is not printed or shown in ledger/report rows.
 - CSV/image exports: current or selected ledger data.
+- App footer: Brandex public website, email, WhatsApp, LinkedIn and copyright/build credit.
 
 These flows are loaded across `index.html`, `app.js`, `gaps.js`, `gaps-print.js`, `assets.js`, `brand-patch.js`, `ui-interactions.js`, and the dynamically loaded `phase2.js`/`phase2.css`. Later scripts wrap or replace earlier functions. Treat load order as a dependency and trace every caller before editing.
 

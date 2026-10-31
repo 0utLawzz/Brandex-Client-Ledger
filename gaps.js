@@ -322,7 +322,7 @@ renderClientEntries = function(rows) {
       <td>${voided ? e.entry_type+' · VOID' : e.entry_type}</td>
       <td>${stageBadge(e.stage)}</td>
       <td class="folder-no"><strong>${tm}</strong></td>
-      <td>${e.details||''}${e.payment_method ? ' · '+e.payment_method : ''}</td>
+      <td>${e.details||''}</td>
       <td class="amt-due">${e.amount_due ? fmt(e.amount_due) : ''}</td>
       <td class="amt-rec">${e.amount_received ? fmt(e.amount_received) : ''}</td>
       <td class="date-cell no-print">${actions}</td>
