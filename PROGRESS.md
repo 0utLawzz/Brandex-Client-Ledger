@@ -29,8 +29,8 @@
 - [x] Review the Vercel preview and approve production release.
 - [x] Merge PR #7 to `main`, deploy production, and create tag `v0.3.0`.
 - [x] Implement the post-release annotations and workflow updates on `feature/post-release-annotations`; see handover checklist.
-- [ ] Commit/push branch and inspect Vercel preview.
-- [ ] Apply additive migration to an isolated Supabase preview database, then review; production remains unchanged.
+- [x] Commit/push branch; Vercel preview is READY and PR #9 is open for review.
+- [ ] Review the protected preview without test writes; obtain an isolated Supabase preview database for migration 007. Production remains unchanged.
 
 ## Known mismatches and operational cautions
 

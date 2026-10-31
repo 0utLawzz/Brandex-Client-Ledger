@@ -42,8 +42,8 @@ The user later asked to complete this handover. UI and application changes are p
 1. [x] Inspect live schema/constraints, record relationships, and storage setup.
 2. [x] Diagnose duplicate codes, void history, saved rates, and refresh behavior.
 3. [x] Prepare app changes and additive migration proposal; class is case-level and ribbon is independent.
-4. [x] Prepare scoped branch and separate migration proposal; preserve financial/audit rows. Migration not applied.
-5. [ ] Review Vercel preview and confirm isolated database mapping before production promotion.
+4. [x] Prepare and push scoped branch and separate migration proposal; migration not applied.
+5. [ ] Review the protected Vercel preview (READY) without test writes. The preview shares Production Supabase credentials; an isolated database is needed to review migration-dependent behavior before production promotion.
 
 ## Not included
 
