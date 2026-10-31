@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Brandex Law Associates — Client Ledger</title>
+<title>BRANDEX LAW ASSOCIATE — CLIENT LEDGER</title>
 <link rel="icon" type="image/png" href="assets/brandex-favicon-20261003.png">
 <link rel="apple-touch-icon" href="assets/brandex-logo-12.png">
 <meta property="og:image" content="assets/brandex-social-preview-20261003.png">
@@ -29,6 +29,9 @@
   #printArea .ack-head, #printArea .print-head, #printArea .ack-row, #printArea .print-head-row { display:flex!important; }
   .ack-page { page-break-after: always; }
   .ack-page:last-child { page-break-after: auto; }
+  #printArea { color:#293A50; text-transform:uppercase; }
+  #printArea table { table-layout:fixed; }
+  #printArea th,#printArea td { white-space:normal!important;overflow-wrap:anywhere;word-break:normal;vertical-align:top; }
 }
 #printArea { display:none; }
 .ack-sheet {
@@ -47,23 +50,30 @@
 <nav class="navbar">
   <div class="nb-brand">
     <img src="assets/brandex-logo-15.png" alt="Brandex" class="nb-logo" width="40" height="40">
-    <div><div class="nb-brand-text">BRANDEX</div><div class="nb-brand-sub">Law associates / Client ledger</div></div>
+    <div><div class="nb-brand-text">BRANDEX LAW ASSOCIATE</div><div class="nb-brand-sub">IP LAW FIRM</div></div>
   </div>
   <div class="nb-nav" aria-label="Main navigation">
     <button class="ni active" type="button" data-page="dashboard">Dashboard</button>
     <button class="ni" type="button" data-page="clients">Clients</button>
     <button class="ni" type="button" data-page="reports">Reports</button>
-    <button class="btn sm" id="signOutButton" type="button" onclick="signOutLedger()" style="display:none;">SIGN OUT</button>
   </div>
   <div class="nb-stats">
     <div class="nb-stat"><strong id="navClients">—</strong>Clients</div>
     <div class="nb-stat"><strong id="navOutstanding">—</strong>Outstanding</div>
+    <details class="feedback-settings no-print">
+      <summary aria-label="Feedback preferences">FEEDBACK</summary>
+      <div class="feedback-settings-panel">
+        <label><input id="feedbackSound" type="checkbox" checked> SOUND FEEDBACK</label>
+        <label><input id="feedbackMotion" type="checkbox" checked> ANIMATION FEEDBACK</label>
+      </div>
+    </details>
+    <button class="btn sm" id="signOutButton" type="button" onclick="signOutLedger()" style="display:none;">SIGN OUT</button>
   </div>
 </nav>
 
 <main class="main">
   <div class="page active" id="page-dashboard">
-    <header class="ph"><div class="ph-copy"><p class="page-kicker">BRANDEX / The daily overview</p><h1 class="ph-title">Dashboard</h1><p class="ph-sub">A clear view of payments, balances and recent activity.</p></div><span class="page-number" aria-hidden="true">01</span></header>
+    <header class="ph"><div class="ph-copy"><p class="page-kicker">BRANDEX / The daily overview</p><h1 class="ph-title">Dashboard</h1><p class="ph-sub">A clear view of payments, balances and recent activity.</p></div></header>
     <div class="sg dashboard-kpis">
       <div class="sc b"><div class="sc-lbl">Clients</div><div class="sc-val" id="statClients">0</div><div class="sc-sub">Client accounts</div></div>
       <div class="sc g"><div class="sc-lbl">Total Received</div><div class="sc-val" id="statReceived">0</div><div class="sc-sub">PKR</div></div>
@@ -101,10 +111,11 @@
   </div>
 
   <div class="page" id="page-clients">
-    <header class="ph"><div class="ph-copy"><p class="page-kicker">BRANDEX / The client directory</p><h1 class="ph-title">Clients</h1><p class="ph-sub">Your accounts, contact details and balances, together.</p></div><span class="page-number" aria-hidden="true">02</span></header>
+    <header class="ph"><div class="ph-copy"><p class="page-kicker">BRANDEX / The client directory</p><h1 class="ph-title">Clients</h1><p class="ph-sub">Your accounts, contact details and balances, together.</p></div></header>
     <div class="tb filter-panel client-filters">
       <div class="fgroup"><label class="flbl" for="clientSearch">Find a client</label><input class="fi" id="clientSearch" placeholder="Search code, name, city, phone…" oninput="renderClients()"></div>
       <div class="fgroup"><label class="flbl" for="seriesFilter">Series</label><select class="fsel" id="seriesFilter" onchange="renderClients()"><option value="">All Series</option></select></div>
+      <label class="show-inactive-control"><input id="showInactiveClients" type="checkbox" onchange="renderClients()"> SHOW INACTIVE CLIENTS</label>
       <button class="btn prim" onclick="openClientModal()">+ New Client</button>
       <button class="btn" onclick="openSeriesModal()">+ New Series</button>
     </div>
@@ -112,7 +123,7 @@
   </div>
 
   <div class="page" id="page-actions">
-    <header class="ph"><div class="ph-copy"><p class="page-kicker">BRANDEX / Post to the ledger</p><h1 class="ph-title">Actions</h1><p class="ph-sub">Choose a charge or receiving to update a client account.</p></div><span class="page-number" aria-hidden="true">03</span></header>
+    <header class="ph"><div class="ph-copy"><p class="page-kicker">BRANDEX / Post to the ledger</p><h1 class="ph-title">Actions</h1><p class="ph-sub">Choose a charge or receiving to update a client account.</p></div></header>
     <div class="sg" style="grid-template-columns:1fr 1fr;">
       <button class="sc b action-card" type="button" onclick="openChargeModal()">
         <span class="sc-lbl">Add Record</span>
@@ -128,7 +139,7 @@
   </div>
 
   <div class="page" id="page-reports">
-    <header class="ph"><div class="ph-copy"><p class="page-kicker">BRANDEX / The reporting desk</p><h1 class="ph-title">Reports</h1><p class="ph-sub">Choose your scope, group entries and prepare an A4 export.</p></div><span class="page-number" aria-hidden="true">04</span></header>
+    <header class="ph"><div class="ph-copy"><p class="page-kicker">BRANDEX / The reporting desk</p><h1 class="ph-title">Reports</h1><p class="ph-sub">Choose your scope, group entries and prepare an A4 export.</p></div></header>
     <div class="tb filter-panel report-filters"><div class="filter-intro"><h2>Build a report</h2><p>Leave a filter blank to include all matching entries.</p></div>
       <div class="fgroup"><label class="flbl" for="reportSearch">Search entries</label><input class="fi" id="reportSearch" placeholder="SEARCH CLIENT, CASE, TM, DETAILS" style="max-width:260px;"></div>
       <div class="fgroup"><label class="flbl" for="reportClient">Client</label><select class="fsel" id="reportClient" style="max-width:220px;"><option value="">All Clients</option></select></div>
@@ -155,16 +166,6 @@
       <h1 class="ph-title" id="ledgerTitle">Client Ledger</h1>
       <div class="ph-sub" id="ledgerSub">—</div>
     </header>
-    <div class="tb lh-actions no-print" aria-label="Client ledger actions">
-      <button class="btn" onclick="showPage('clients')">← Back</button>
-      <select class="fsel" aria-label="Filter ledger by case" id="ledgerCaseFilter" onchange="filterLedgerByCase()" style="max-width:200px;"><option value="">All Cases / TM</option></select>
-      <button class="btn" onclick="printSelectedClientEntries()">Print Selected</button>
-      <button class="btn del" onclick="voidSelectedEntries()">Void Selected</button>
-      <button class="btn" onclick="openEditCaseModal()">Edit TM / App</button>
-      <button class="btn prim" onclick="openChargeModal(currentClientId)">+ Charge</button>
-      <button class="btn ok" onclick="openReceivingModal(currentClientId)">+ Receiving</button>
-      <button class="btn" onclick="printLedgerA4()">Print Ledger A4</button>
-    </div>
     <section class="ledger-page case-list-panel" aria-labelledby="caseListTitle">
       <div class="ledger-header case-list-header">
         <div class="section-heading"><h2 id="caseListTitle">Cases & folders</h2><p>Search, stage and status filter cases. From / to dates filter ledger entries.</p></div>
@@ -185,14 +186,30 @@
       </div>
     </section>
     <section class="stage-summary" aria-labelledby="stageSummaryTitle"><div class="section-heading"><h2 id="stageSummaryTitle">Stage balances</h2><p>Case charges less applied payments · all dates. Opening balance is shown in the account summary.</p></div><div id="stageOutstanding" class="stage-outstanding" aria-live="polite"></div></section>
+    <div class="tb lh-actions no-print" aria-label="Client ledger actions">
+      <button class="btn" onclick="showPage('clients')">← Back</button>
+      <select class="fsel" aria-label="Filter ledger by case" id="ledgerCaseFilter" onchange="filterLedgerByCase()" style="max-width:200px;"><option value="">All Cases / TM</option></select>
+      <button class="btn" onclick="printSelectedClientEntries()">Print Selected</button>
+      <button class="btn del" onclick="voidSelectedEntries()">Void Selected</button>
+      <button class="btn" onclick="openEditCaseModal()">Edit TM / App</button>
+      <button class="btn prim" onclick="openChargeModal(currentClientId)">+ Charge</button>
+      <button class="btn ok" onclick="openReceivingModal(currentClientId)">+ Receiving</button>
+      <button class="btn" onclick="printLedgerA4()">Print Ledger A4</button>
+    </div>
     <div class="ledger-page">
       <div class="ledger-header section-heading entry-heading"><div><h2>Ledger entries</h2><p>Charges and receivings · select rows for printing or voiding.</p></div><span class="table-note">Amounts in PKR</span></div>
       <div id="tmPaymentStatus" style="display:none;padding:12px 12px 0;"></div>
+      <div class="entry-filters no-print" role="group" aria-label="Filter ledger entries">
+        <div class="fgroup"><label class="flbl" for="ledgerEntrySearch">Find in entries</label><input class="fi" id="ledgerEntrySearch" type="search" placeholder="TM, APPLICATION, DETAILS OR PAYMENT METHOD"></div>
+        <div class="fgroup"><label class="flbl" for="ledgerEntryType">Type</label><select class="fsel" id="ledgerEntryType"><option value="">ALL TYPES</option><option value="charge">CHARGES</option><option value="receiving">RECEIVINGS</option></select></div>
+        <div class="fgroup"><label class="flbl" for="ledgerEntryStage">Stage</label><select class="fsel" id="ledgerEntryStage"><option value="">ALL STAGES</option><option value="S1">S1</option><option value="S2">S2</option><option value="S3">S3</option><option value="S4">S4</option><option value="general">GENERAL</option></select></div>
+        <button class="btn" id="clearLedgerEntryFilters" type="button">CLEAR FILTERS</button>
+      </div>
       <div style="overflow-x:auto;min-height:80px;"><table class="lt" id="clientLedgerTable" style="width:100%;min-width:860px;"><thead><tr><th><input id="selectAllLedgerEntries" type="checkbox" aria-label="Select all ledger entries"></th><th>Date</th><th>Type</th><th>Stage</th><th>TM / Folder</th><th>Application Name</th><th>Details</th><th>Due</th><th>Received</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
     </div>
   </div>
 </main>
-<footer class="workspace-footer no-print"><span>BRANDEX LAW ASSOCIATES</span><span>Client ledger · Amounts in PKR</span></footer>
+<footer class="workspace-footer no-print"><span>BRANDEX LAW ASSOCIATE</span><span>Client ledger · Amounts in PKR</span></footer>
 
 <div class="mo" id="modalClient"><div class="mbox"><div class="mh"><div class="mt">CLIENT</div><button class="mc-btn" onclick="closeModal('modalClient')">×</button></div><div class="mb"><div class="fg"><div class="fgroup"><label class="flbl" for="cSeries">Series</label><select class="fsel" id="cSeries"></select></div><div class="fgroup"><label class="flbl" for="cCode">Client Code *</label><input class="fi" id="cCode" placeholder="A-001"></div><div class="fgroup full"><label class="flbl" for="cName">Client Name</label><input class="fi" id="cName"></div><div class="fgroup"><label class="flbl" for="cCity">City</label><input class="fi" id="cCity"></div><div class="fgroup"><label class="flbl" for="cEmail">Email</label><input class="fi" id="cEmail" type="email"></div><div class="fgroup"><label class="flbl" for="cPhone">Phone</label><input class="fi" id="cPhone"></div><div class="fgroup"><label class="flbl" for="cHeader">Opening balance (PKR)</label><input class="fi" id="cHeader" type="number" step="0.01" value="0"></div></div><div style="margin-top:16px;border-top:2px solid var(--black);padding-top:12px;"><div class="flbl" style="margin-bottom:8px;">Stage Rates (PKR)</div><div class="fg"><div class="fgroup"><label class="flbl" for="rS1">Stage 1</label><input class="fi" id="rS1" type="number" step="0.01" value="0"></div><div class="fgroup"><label class="flbl" for="rS2">Stage 2</label><input class="fi" id="rS2" type="number" step="0.01" value="0"></div><div class="fgroup"><label class="flbl" for="rS3">Stage 3</label><input class="fi" id="rS3" type="number" step="0.01" value="0"></div><div class="fgroup"><label class="flbl" for="rS4">Stage 4</label><input class="fi" id="rS4" type="number" step="0.01" value="0"></div></div></div></div><div class="mf"><button class="btn" onclick="closeModal('modalClient')">Cancel</button><button class="btn prim" onclick="saveClient()">Save Client</button></div></div></div>
 
@@ -206,7 +223,7 @@
 <div class="toast" id="toast"></div>
 <section class="auth-gate" id="authGate" aria-labelledby="authTitle">
   <form class="auth-card" id="authForm">
-    <div class="auth-brand"><img src="assets/brandex-logo-15.png" alt="Brandex" width="48" height="48"><span>BRANDEX LAW ASSOCIATES</span></div><p class="page-kicker">Your ledger workspace</p><h1 id="authTitle">Welcome back.</h1>
+    <div class="auth-brand"><img src="assets/brandex-logo-15.png" alt="Brandex" width="48" height="48"><span>BRANDEX LAW ASSOCIATE</span></div><p class="page-kicker">Your Database &amp; Ledger Management System</p><h1 id="authTitle">Welcome back.</h1>
     <p>Sign in with your Brandex staff account to continue.</p>
     <label class="flbl" for="authEmail">EMAIL</label>
     <input class="fi" id="authEmail" type="email" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
@@ -223,5 +240,6 @@
 <script src="assets.js"></script>
 <script src="brand-patch.js"></script>
 <script src="ui-interactions.js"></script>
+<script src="feedback.js"></script>
 </body>
 </html>

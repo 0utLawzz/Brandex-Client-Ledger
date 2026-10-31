@@ -1,6 +1,6 @@
 # Brandex Client Ledger — Project Memory
 
-**Status:** canonical working memory, reviewed 31 October 2026  
+**Status:** canonical working memory, reviewed 1 November 2026
 **Product baseline:** Ledger is the financial system; CMS is the full case/workflow system.  
 **Production:** https://brandex-client-ledger.vercel.app
 
@@ -15,6 +15,8 @@ This file captures user-confirmed direction and facts inspected in the current r
 - Ledger payment status can be consumed by CMS through a trusted server-side integration. Browser code must never receive Supabase service-role credentials.
 - Cases are not all required to start at Stage 1. A matter may enter at Stage 2 or Stage 3; the progression rule is to move forward from its actual stage. Do not infer that a skipped earlier stage is unpaid, required, or should be fabricated.
 - The user expects relationship/dependency review before feature work: identify where data is created, stored, displayed, linked, and consumed; point out dead or duplicate paths and recommend a better approach when evidence supports it.
+- Until the Case System is built, the Ledger's **Open Case** button remains a clear placeholder. The full case view will eventually open from this button once the systems are linked.
+- Client editing and series creation should remain available. Client removal must preserve linked financial history; a recoverable inactive/archive state is the safe current implementation.
 - Every code change is committed and pushed. Review changes in a preview environment first. Production deployment/promotion follows only after the user approves the preview.
 
 ## Current Ledger record model (source inspection)
@@ -62,6 +64,7 @@ These flows are loaded across `index.html`, `app.js`, `gaps.js`, `gaps-print.js`
 - Migrations 001–006 are present locally. The live project's migration history previously inspected in the October 2026 work did not list all of these migrations in the same form/order (it showed entries named `cms_stage_payment_bridge` and `fix_zero_charge_stage_payment_status`). Treat migration-history reconciliation as an operational risk; do not replay, rename, or rewrite historical migrations without inspecting the live environment.
 - Staff table policies exist in migration 005; the application must still be validated against the target Supabase Auth setup and deployment environment.
 - The CMS repository currently contains an older CMS-local ledger schema/integration attempt and documentation that disagrees with this confirmed boundary. PRs #6 and #10 were closed without merging; their branches were preserved. CMS code/data was not altered by closing them.
+- The Ledger has controls to show and restore inactive clients. Charge and receiving selectors omit inactive clients; archived accounts retain their Ledger history.
 
 ### Decisions still needed before feature implementation
 
@@ -87,9 +90,10 @@ These are implementation questions, not a speculative roadmap. Keep them unresol
 
 - [x] Audited Ledger repository structure, record creation, display paths, migration list, and current documentation.
 - [x] Closed CMS PR #6 and PR #10 because they are old integration approaches that do not implement the confirmed Ledger-first boundary; both PR branches and commits remain available; neither was merged.
-- [x] Established this memory and repository rules on a preview-only documentation branch. This does not alter production code, database data, or schema.
+- [x] Established this memory and repository rules on a preview branch.
+- [x] Implemented the user-provided UI annotations and recoverable client archive controls on that preview branch; no schema or production data change.
 - [ ] Review the resulting Vercel preview and approve or request changes.
-- [ ] After approval, merge and create the corresponding version tag/release.
+- [ ] After approval, merge and create tag/release `v0.3.0`.
 
 ## Memory maintenance
 

@@ -282,7 +282,10 @@ async function saveClient() {
 
 function openChargeModal(preClientId) {
   const sel = document.getElementById('chClient');
-  sel.innerHTML = mem.clients.map(c => `<option value="${c.id}">${c.client_code} — ${c.client_name || ''}</option>`).join('');
+  const activeClients = mem.clients.filter(c => c.is_active !== false);
+  if (preClientId && !activeClients.some(c => c.id === preClientId)) return toast('THIS CLIENT IS INACTIVE. RESTORE IT BEFORE POSTING A CHARGE.');
+  if (!activeClients.length) return toast('CREATE OR RESTORE AN ACTIVE CLIENT FIRST.');
+  sel.innerHTML = activeClients.map(c => `<option value="${c.id}">${c.client_code} — ${c.client_name || ''}</option>`).join('');
   if (preClientId) sel.value = preClientId;
   document.getElementById('chTM').value = '';
   document.getElementById('chFolder').value = '';
@@ -383,7 +386,10 @@ function bindTMLookup(inputId, infoId) {
 
 function openReceivingModal(preClientId) {
   const sel = document.getElementById('rcClient');
-  sel.innerHTML = mem.clients.map(c => `<option value="${c.id}">${c.client_code} — ${c.client_name || ''}</option>`).join('');
+  const activeClients = mem.clients.filter(c => c.is_active !== false);
+  if (preClientId && !activeClients.some(c => c.id === preClientId)) return toast('THIS CLIENT IS INACTIVE. RESTORE IT BEFORE POSTING A RECEIVING.');
+  if (!activeClients.length) return toast('CREATE OR RESTORE AN ACTIVE CLIENT FIRST.');
+  sel.innerHTML = activeClients.map(c => `<option value="${c.id}">${c.client_code} — ${c.client_name || ''}</option>`).join('');
   if (preClientId) sel.value = preClientId;
   document.getElementById('rcTM').value = '';
   document.getElementById('rcStage').value = '';
@@ -443,7 +449,7 @@ function printReceipt(entry) {
   const client = entry.clients || mem.clients.find(c => c.id === entry.client_id) || {};
   const html = `
     <div class="receipt-box">
-      <h1>BRANDEX LAW ASSOCIATES</h1>
+      <h1>BRANDEX LAW ASSOCIATE</h1>
       <div class="sub">PAYMENT RECEIPT</div>
       <div class="receipt-row"><span>Receipt No</span><span>${entry.receipt_no || '—'}</span></div>
       <div class="receipt-row"><span>Date</span><span>${entry.entry_date || ''}</span></div>

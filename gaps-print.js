@@ -2,7 +2,7 @@
 const STAGE_LABEL_P = { S1: 'Stage 1', S2: 'Stage 2', S3: 'Stage 3', S4: 'Stage 4' };
 function stageLabelP(s) { return (typeof stageLabel === 'function' ? stageLabel(s) : (STAGE_LABEL_P[s] || s || '—')); }
 const BRAND_P = (typeof BRAND !== 'undefined') ? BRAND : {
-  name: 'Brandex Law Associates', email: 'info@brandex.pk', tagline: 'TRADEMARK REGISTRY',
+  name: 'BRANDEX LAW ASSOCIATE', email: 'info@brandex.pk', tagline: 'IP LAW FIRM',
   banks: [
     { name: 'United Bank Limited (UBL)', title: 'Brandex Pk', account: '0209301813886', iban: 'PK85UNIL0109000301813886' },
     { name: 'Meezan Bank Limited', title: 'Brandex.pk', account: '9814-0104862477', iban: 'PK12MEZN0098140104862477' }
@@ -127,7 +127,7 @@ function printAck(entryId) {
     window.print();
     area.style.display = 'none';
     area.innerHTML = '';
-    document.title = 'Brandex Law Associates — Client Ledger';
+    document.title = 'BRANDEX LAW ASSOCIATE — CLIENT LEDGER';
   }, 200);
 }
 
@@ -186,7 +186,7 @@ function printLedgerA4() {
   area.innerHTML = body;
   area.style.display = 'block';
   document.title = (c.client_code || 'Ledger') + '_Ledger_A4';
-  setTimeout(() => { window.print(); area.style.display = 'none'; area.innerHTML = ''; document.title = 'Brandex Law Associates — Client Ledger'; }, 200);
+  setTimeout(() => { window.print(); area.style.display = 'none'; area.innerHTML = ''; document.title = 'BRANDEX LAW ASSOCIATE — CLIENT LEDGER'; }, 200);
 }
 
 runReport = function() {
@@ -230,11 +230,11 @@ runReport = function() {
     html += `<div class="report-group report-divider">
       <h3><strong>${clientDisplayText(k)}</strong> <span class="report-count">${groups[k].length} entries</span>
       <label class="report-select"><input type="checkbox" onchange="toggleGroupChecks(this)"> Select group</label></h3>
-      <table class="lt" style="width:100%;min-width:640px;"><thead><tr>
+      <div class="report-table-wrap"><table class="lt report-screen-table" style="width:100%;min-width:900px;"><thead><tr>
         <th></th><th>Date</th><th>Client</th><th>Type</th><th>Stage</th><th>TM</th><th>Details</th><th>Due</th><th>Received</th>
       </tr></thead><tbody>`;
     groups[k].forEach(e => { html += reportRowHTML(e); });
-    html += '</tbody></table></div>';
+    html += '</tbody></table></div></div>';
   });
   if (!Object.keys(groups).length) html = '<div class="empty">No rows match filters</div>';
   wrap.innerHTML = html;
@@ -297,7 +297,7 @@ function printEntriesA4(list, title) {
       const rows = byClient[ck][tk];
       const stages = [...new Set(rows.map(e => e.stage).filter(Boolean))];
       body += `<div class="print-pills" style="margin:8px 0;">${tmPill(tk === 'General' ? null : tk)} ${stages.map(stagePill).join(' ')}</div>
-        <table class="print-table"><thead><tr>
+        <table class="print-table report-print-table"><thead><tr>
           <th>Date</th><th>Type</th><th>Stage</th><th>Details</th><th style="text-align:right;">Due</th><th style="text-align:right;">Rec</th>
         </tr></thead><tbody>`;
       rows.forEach(e => {
@@ -319,7 +319,7 @@ function printEntriesA4(list, title) {
   area.innerHTML = body;
   area.style.display = 'block';
   document.title = title || 'Ledger_A4';
-  setTimeout(() => { window.print(); area.style.display = 'none'; area.innerHTML = ''; document.title = 'Brandex Law Associates — Client Ledger'; }, 200);
+  setTimeout(() => { window.print(); area.style.display = 'none'; area.innerHTML = ''; document.title = 'BRANDEX LAW ASSOCIATE — CLIENT LEDGER'; }, 200);
 }
 
 console.log('Brandex gaps-print v6 loaded (small logo + aligned banks)');

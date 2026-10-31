@@ -130,20 +130,49 @@
       var grid = document.getElementById('clientsGrid');
       if (!grid) return;
       grid.querySelectorAll('.client-card').forEach(function (card) {
-        if (card.querySelector('.cc-edit')) return;
         var onclick = card.getAttribute('onclick') || '';
         var m = onclick.match(/openClientLedger\('([^']+)'\)/);
         if (!m) return;
         var id = m[1];
-        var edit = document.createElement('button');
-        edit.className = 'btn sm cc-edit';
-        edit.textContent = 'Edit';
-        edit.setAttribute('aria-label', 'Edit client ' + (card.querySelector('.cc-no') || card.querySelector('.cc-code')).textContent);
-        edit.onclick = function (ev) { ev.stopPropagation(); openClientModal(id); };
-        (card.querySelector('.cc-footer') || card).appendChild(edit);
+        var client = (mem.clients || []).find(function (item) { return item.id === id; });
+        var footer = card.querySelector('.cc-footer') || card;
+        var code = (card.querySelector('.cc-no') || card.querySelector('.cc-code') || {}).textContent || '';
+        if (!card.querySelector('.cc-edit')) {
+          var edit = document.createElement('button');
+          edit.className = 'btn sm cc-edit';
+          edit.textContent = 'Edit';
+          edit.setAttribute('aria-label', 'Edit client ' + code);
+          edit.onclick = function (ev) { ev.stopPropagation(); openClientModal(id); };
+          footer.appendChild(edit);
+        }
+        if (!client || !card.querySelector('.cc-delete,.cc-restore')) {
+          var status = document.createElement('button');
+          var isInactive = client && client.is_active === false;
+          status.className = 'btn sm ' + (isInactive ? 'cc-restore' : 'cc-delete');
+          status.textContent = isInactive ? 'Restore' : 'Delete';
+          status.setAttribute('aria-label', (isInactive ? 'Restore client ' : 'Delete client ') + code);
+          status.onclick = function (ev) { ev.stopPropagation(); setClientActive(id, isInactive); };
+          footer.appendChild(status);
+        }
       });
     };
   }
+
+  window.setClientActive = async function (clientId, restore) {
+    var client = (mem.clients || []).find(function (item) { return item.id === clientId; });
+    if (!client) return toast('CLIENT NOT FOUND');
+    if (!sb) return toast('SUPABASE REQUIRED');
+    var message = restore
+      ? 'RESTORE ' + (client.client_code || 'THIS CLIENT') + ' TO ACTIVE CLIENTS?'
+      : 'DELETE ' + (client.client_code || 'THIS CLIENT') + ' FROM THE ACTIVE LIST? ITS CASES, CHARGES, RECEIPTS AND HISTORY WILL BE PRESERVED AND CAN BE RESTORED.';
+    if (!window.confirm(message)) return;
+    var result = await sb.from('clients').update({ is_active: !!restore }).eq('id', clientId);
+    if (result.error) return toast(result.error.message.toUpperCase());
+    await loadClients();
+    renderClients();
+    await loadDashboard();
+    toast(restore ? 'CLIENT RESTORED' : 'CLIENT DELETED · HISTORY PRESERVED');
+  };
 
   openClientLedger = async function (clientId) {
     currentClientId = clientId;
@@ -159,7 +188,14 @@
     });
     var bal = Number(c.header_balance || 0) + due - rec;
     var title = document.getElementById('ledgerTitle');
-    if (title) title.textContent = c.client_code || 'Client ledger';
+    var seriesRow = c.series || (mem.series || []).find(function (item) { return item.id === c.series_id; }) || {};
+    var seriesCode = String(seriesRow.code || '').trim();
+    var clientCode = String(c.client_code || '').trim();
+    var upperCode = clientCode.toUpperCase();
+    var upperSeries = seriesCode.toUpperCase();
+    var codeAlreadyPrefixed = upperSeries && (upperCode.indexOf(upperSeries + '-') === 0 || upperCode.indexOf(upperSeries + ' ') === 0 || upperCode === upperSeries);
+    var displayCode = codeAlreadyPrefixed ? clientCode : [seriesCode, clientCode].filter(Boolean).join(' · ');
+    if (title) title.textContent = (displayCode || 'CLIENT') + ' — CLIENT LEDGER';
     var sub = document.getElementById('ledgerSub');
     if (sub) {
       sub.innerHTML = '<div class="ledger-profile"><div class="ledger-profile-copy"><h2 class="ledger-client-name">' + clientDisplayText(c.client_name || 'Unnamed client') + '</h2>' +
@@ -564,7 +600,7 @@
         '<td>' + escapeHTML(row.item.application_name || '—') + '</td>' +
         '<td>' + badges + '</td>' +
         '<td class="amt-due">' + fmt(outstanding) + '</td>' +
-        '<td><button class="btn sm" type="button" data-open-case="' + escapeHTML(row.id) + '">OPEN CASE</button></td>' +
+        '<td><button class="btn sm open-case-placeholder" type="button" disabled title="FULL CASE VIEW WILL CONNECT HERE WHEN THE CASE SYSTEM IS READY" aria-label="Open case: case system connection coming soon">OPEN CASE</button><span class="case-link-note">COMING SOON</span></td>' +
         '</tr>';
     }).join('');
     if (!cases.length) body.innerHTML = '<tr><td colspan="6" class="empty">NO CASES MATCH THESE FILTERS</td></tr>';
@@ -609,11 +645,25 @@
     var caseId = document.getElementById('ledgerCaseFilter').value;
     var from = document.getElementById('ledgerDateFrom').value;
     var to = document.getElementById('ledgerDateTo').value;
+    var query = String(document.getElementById('ledgerEntrySearch').value || '').trim().toUpperCase();
+    var type = document.getElementById('ledgerEntryType').value;
+    var stage = document.getElementById('ledgerEntryStage').value;
     var rows = window._ledgerRows || [];
     return rows.filter(function (entry) {
       if (caseId && (!entry.cases || entry.cases.id !== caseId)) return false;
       if (from && String(entry.entry_date || '') < from) return false;
       if (to && String(entry.entry_date || '') > to) return false;
+      if (type && entry.entry_type !== type) return false;
+      if (stage === 'general' && entry.stage) return false;
+      if (stage && stage !== 'general' && entry.stage !== stage) return false;
+      if (query) {
+        var client = (mem.clients || []).find(function (item) { return item.id === entry.client_id; }) || {};
+        var searchable = [entry.entry_date, entry.entry_type, entry.stage, entry.details, entry.payment_method,
+          entry.receipt_no, client.client_code, client.client_name,
+          entry.cases && entry.cases.tm_no, entry.cases && entry.cases.folder_no,
+          entry.cases && entry.cases.application_name].join(' ').toUpperCase();
+        if (searchable.indexOf(query) === -1) return false;
+      }
       return true;
     });
   }
@@ -630,6 +680,20 @@
   ['caseStageFilter', 'caseStatusFilter', 'ledgerCaseFilter', 'ledgerDateFrom', 'ledgerDateTo'].forEach(function (id) {
     var field = document.getElementById(id);
     if (field) field.addEventListener('change', refreshLedgerFilters);
+  });
+  ['ledgerEntryType', 'ledgerEntryStage'].forEach(function (id) {
+    var field = document.getElementById(id);
+    if (field) field.addEventListener('change', refreshLedgerFilters);
+  });
+  var entrySearch = document.getElementById('ledgerEntrySearch');
+  if (entrySearch) entrySearch.addEventListener('input', refreshLedgerFilters);
+  var clearEntryFilters = document.getElementById('clearLedgerEntryFilters');
+  if (clearEntryFilters) clearEntryFilters.addEventListener('click', function () {
+    ['ledgerEntrySearch', 'ledgerEntryType', 'ledgerEntryStage', 'ledgerCaseFilter', 'ledgerDateFrom', 'ledgerDateTo'].forEach(function (id) {
+      var field = document.getElementById(id);
+      if (field) field.value = '';
+    });
+    refreshLedgerFilters();
   });
 
   var caseTable = document.getElementById('clientCaseTableBody');
@@ -713,7 +777,7 @@
     if (entry.entry_type === 'receiving' && typeof printAck === 'function') return printAck(entry.id);
     var client = (mem.clients || []).find(function (row) { return row.id === entry.client_id; }) || {};
     var tm = entry.cases && (entry.cases.tm_no || entry.cases.folder_no || entry.cases.application_name) || '—';
-    var receipt = '<main class="receipt-box"><h1>BRANDEX LAW ASSOCIATES</h1><div class="sub">CHARGE RECORD</div>' +
+    var receipt = '<main class="receipt-box"><h1>BRANDEX LAW ASSOCIATE</h1><div class="sub">CHARGE RECORD</div>' +
       '<p>DATE <strong>' + escapeHTML(entry.entry_date || '') + '</strong></p>' +
       '<p>CLIENT <strong>' + escapeHTML(client.client_code || '') + ' · ' + escapeHTML(client.client_name || '') + '</strong></p>' +
       '<p>CASE / TM <strong>' + escapeHTML(tm) + '</strong></p>' +
@@ -1083,18 +1147,4 @@
     if (typeof start === 'number' && typeof end === 'number') field.setSelectionRange(start, end);
   }, true);
 
-  document.addEventListener('pointerup', function (event) {
-    if (!event.target.closest('button,.ni,.client-card')) return;
-    try {
-      var Context = window.AudioContext || window.webkitAudioContext;
-      if (!Context) return;
-      var context = new Context();
-      var oscillator = context.createOscillator(), gain = context.createGain();
-      oscillator.frequency.value = 520;
-      gain.gain.setValueAtTime(0.025, context.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.05);
-      oscillator.connect(gain).connect(context.destination);
-      oscillator.start(); oscillator.stop(context.currentTime + 0.05);
-    } catch (_) { /* Sound is optional. */ }
-  });
 })();

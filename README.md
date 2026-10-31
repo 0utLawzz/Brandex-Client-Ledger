@@ -5,21 +5,23 @@ The client-side financial ledger for Brandex Law Associates. It records client a
 **Production:** [brandex-client-ledger.vercel.app](https://brandex-client-ledger.vercel.app)
 
 **Repository:** [0utLawzz/Brandex-Client-Ledger](https://github.com/0utLawzz/Brandex-Client-Ledger)
-**Current baseline:** `0.2.1` (release candidate; documentation and baseline review pending preview approval)
+**Current baseline:** `0.3.0` release candidate (preview review pending)
 
 ## Product boundary
 
 Brandex Client Ledger owns financial records: client accounts and rates, TM-linked cases, charges, payments, receipts, and payment balances. Brandex Database CMS owns the fuller case record and case-workflow details. The Ledger is the financial source of truth; the CMS must not create a competing financial ledger.
 
-The intended entry flow is to create a case in the Ledger with the minimum required financial and identifying details, then open that case in the CMS to complete its fuller record. The CMS connection for this flow is not yet complete. See [Project Memory](docs/PROJECT_MEMORY.md) for the observed implementation and unresolved decisions.
+The intended entry flow is to create a case in the Ledger with the minimum required financial and identifying details, then open that case in the CMS to complete its fuller record. The CMS connection for this flow is not yet complete. The Ledger's **Open Case** button remains a clear placeholder until the Case System is ready. See [Project Memory](docs/PROJECT_MEMORY.md) for the observed implementation and unresolved decisions.
 
 ## Current capabilities
 
 - Staff sign-in backed by Supabase Auth; database table policies target authenticated users.
 - Client accounts, account series, contact details, and client-specific S1–S4 rates.
+- Client editing, series creation, and recoverable client archiving that preserves financial history.
 - TM-linked charges and receiving entries, optional case/folder/application details, payment methods, and printable receipts.
 - Client and case views, stage balances, dashboard totals, filters, reports, CSV export, and print layouts.
 - Soft-void support and a stage-payment status RPC intended for trusted CMS server-side use.
+- Ledger-entry search, type/stage/date filters, and sound/animation preferences.
 
 These descriptions reflect the current repository and migrations; they do not imply that Ledger-to-CMS handoff is already implemented.
 
