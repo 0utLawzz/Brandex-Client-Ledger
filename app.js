@@ -282,7 +282,10 @@ async function saveClient() {
 
 function openChargeModal(preClientId) {
   const sel = document.getElementById('chClient');
-  sel.innerHTML = mem.clients.map(c => `<option value="${c.id}">${c.client_code} — ${c.client_name || ''}</option>`).join('');
+  const activeClients = mem.clients.filter(c => c.is_active !== false);
+  if (preClientId && !activeClients.some(c => c.id === preClientId)) return toast('THIS CLIENT IS INACTIVE. RESTORE IT BEFORE POSTING A CHARGE.');
+  if (!activeClients.length) return toast('CREATE OR RESTORE AN ACTIVE CLIENT FIRST.');
+  sel.innerHTML = activeClients.map(c => `<option value="${c.id}">${c.client_code} — ${c.client_name || ''}</option>`).join('');
   if (preClientId) sel.value = preClientId;
   document.getElementById('chTM').value = '';
   document.getElementById('chFolder').value = '';
@@ -383,7 +386,10 @@ function bindTMLookup(inputId, infoId) {
 
 function openReceivingModal(preClientId) {
   const sel = document.getElementById('rcClient');
-  sel.innerHTML = mem.clients.map(c => `<option value="${c.id}">${c.client_code} — ${c.client_name || ''}</option>`).join('');
+  const activeClients = mem.clients.filter(c => c.is_active !== false);
+  if (preClientId && !activeClients.some(c => c.id === preClientId)) return toast('THIS CLIENT IS INACTIVE. RESTORE IT BEFORE POSTING A RECEIVING.');
+  if (!activeClients.length) return toast('CREATE OR RESTORE AN ACTIVE CLIENT FIRST.');
+  sel.innerHTML = activeClients.map(c => `<option value="${c.id}">${c.client_code} — ${c.client_name || ''}</option>`).join('');
   if (preClientId) sel.value = preClientId;
   document.getElementById('rcTM').value = '';
   document.getElementById('rcStage').value = '';
@@ -441,32 +447,28 @@ async function saveReceiving() {
 
 function printReceipt(entry) {
   const client = entry.clients || mem.clients.find(c => c.id === entry.client_id) || {};
-  const html = `
-    <div class="receipt-box">
-      <h1>BRANDEX LAW ASSOCIATES</h1>
-      <div class="sub">PAYMENT RECEIPT</div>
-      <div class="receipt-row"><span>Receipt No</span><span>${entry.receipt_no || '—'}</span></div>
-      <div class="receipt-row"><span>Date</span><span>${entry.entry_date || ''}</span></div>
-      <div class="receipt-row"><span>Client</span><span>${client.client_code || ''} — ${client.client_name || ''}</span></div>
-      <div class="receipt-row"><span>Stage</span><span>${entry.stage || 'General'}</span></div>
-      <div class="receipt-row"><span>Method</span><span>${entry.payment_method || '—'}</span></div>
-      <div class="receipt-row"><span>Details</span><span>${entry.details || ''}</span></div>
-      <div class="receipt-row total"><span>Amount Received</span><span>PKR ${fmt(entry.amount_received)}</span></div>
-      <div style="margin-top:24px;text-align:center;font-family:'DM Mono';font-size:10px;color:#555;">Thank you</div>
-    </div>`;
-  const w = window.open('', '_blank', 'width=480,height=640');
-  w.document.write(`<html><head><title>Receipt ${entry.receipt_no}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono&family=Space+Grotesk&display=swap" rel="stylesheet">
-    <style>body{font-family:'Space Grotesk',sans-serif;padding:20px;background:#F0E8D0;text-transform:uppercase;}
-    .receipt-box{max-width:420px;margin:0 auto;border:3px solid #0C0C0C;padding:24px;background:#fff;}
-    .receipt-box h1{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;text-align:center;margin-bottom:4px;}
-    .sub{text-align:center;font-family:'DM Mono',monospace;font-size:10px;color:#555;margin-bottom:16px;}
-    .receipt-row{display:flex;justify-content:space-between;padding:4px 0;font-size:13px;border-bottom:1px dashed #ccc;}
-    .receipt-row.total{font-weight:700;font-size:16px;border-bottom:none;margin-top:8px;}
-    </style></head><body>${html}<script>window.print()<\/script></body></html>`);
-  w.document.close();
+  const area = document.getElementById('printArea');
+  if (!area) return toast('Print area missing');
+  area.innerHTML = `<div class="ack-sheet print-document">${window.BRANDEX_PRINT_HEADER('PAYMENT ACKNOWLEDGMENT')}
+    <div class="print-group"><div class="print-group-title">Client</div><div class="print-big">${clientDisplayText(client.client_code || '—')}</div><div class="print-big-sub">${clientDisplayText(client.client_name || '—')}</div></div>
+    <div class="print-group"><div class="print-group-title">Payment details</div>
+      <div class="ack-row"><span>Receipt No</span><strong>${clientDisplayText(entry.receipt_no || '—')}</strong></div>
+      <div class="ack-row"><span>Date</span><strong>${clientDisplayText(entry.entry_date || '—')}</strong></div>
+      <div class="ack-row"><span>Stage</span><strong>${clientDisplayText(entry.stage || 'General')}</strong></div>
+      <div class="ack-row"><span>Details</span><strong>${clientDisplayText(entry.details || '—')}</strong></div>
+      <div class="ack-row total"><span>Amount received</span><strong>PKR ${fmt(entry.amount_received)}</strong></div>
+    </div><div class="print-signs"><div>_________________<br>Received by</div><div>_________________<br>Client / Bearer</div></div>${window.BRANDEX_PRINT_FOOTER()}
+  </div>`;
+  area.style.display = 'block';
+  document.title = 'Receipt_' + (entry.receipt_no || String(entry.id).slice(0, 8)) + '_A4';
+  setTimeout(() => { window.print(); area.style.display = 'none'; area.innerHTML = ''; document.title = 'BRANDEX LAW ASSOCIATE — CLIENT LEDGER'; }, 200);
 }
-function printLedger() { window.print(); }
+function printLedger() {
+  if (currentClientId && typeof printLedgerA4 === 'function') return printLedgerA4();
+  const rows = window._reportRows || (typeof activeEntries === 'function' ? activeEntries(mem.entries || []) : (mem.entries || []));
+  if (rows.length && typeof printEntriesA4 === 'function') return printEntriesA4(rows, 'Ledger_A4');
+  return toast('OPEN A CLIENT LEDGER OR RUN A REPORT FIRST');
+}
 
 function runReport() {
   const q = (document.getElementById('reportSearch').value || '').toLowerCase();
@@ -518,7 +520,13 @@ function exportCSV(selectedOnly) {
   a.click();
   toast('CSV downloaded');
 }
-function exportImage() { toast('Use Print → Save as PDF for now'); window.print(); }
+function exportImage() {
+  toast('Use Print → Save as PDF for now');
+  if (currentClientId && typeof printLedgerA4 === 'function') return printLedgerA4();
+  const rows = window._reportRows || [];
+  if (rows.length && typeof printEntriesA4 === 'function') return printEntriesA4(rows, 'Ledger_Export_A4');
+  return toast('RUN A REPORT FIRST');
+}
 
 (async function init() {
   if (!SUPABASE_URL || !SUPABASE_ANON) {

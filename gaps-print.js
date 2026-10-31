@@ -1,38 +1,14 @@
 // --- Brandex prints v6: small top logo, aligned bank accounts ---
 const STAGE_LABEL_P = { S1: 'Stage 1', S2: 'Stage 2', S3: 'Stage 3', S4: 'Stage 4' };
 function stageLabelP(s) { return (typeof stageLabel === 'function' ? stageLabel(s) : (STAGE_LABEL_P[s] || s || '—')); }
-const BRAND_P = (typeof BRAND !== 'undefined') ? BRAND : {
-  name: 'Brandex Law Associates', email: 'info@brandex.pk', tagline: 'TRADEMARK REGISTRY',
-  banks: [
-    { name: 'United Bank Limited (UBL)', title: 'Brandex Pk', account: '0209301813886', iban: 'PK85UNIL0109000301813886' },
-    { name: 'Meezan Bank Limited', title: 'Brandex.pk', account: '9814-0104862477', iban: 'PK12MEZN0098140104862477' }
-  ],
-  online: [
-    { name: 'EasyPaisa', title: 'EHTASHAM UD DIN SIDDIQUI', account: '0336-0015009', note: 'Merchant Till 214114' },
-    { name: 'JazzCash / Raast ID', title: 'EHTASHAM UD DIN SIDDIQUI', account: '0336-0015004' }
-  ]
-};
-const PRINT_CARD = 'assets/brandex-social-preview-20261003.png';
-const DARK_ORANGE = '#8B3A00';
-const THEME_GREEN = '#0D9970';
-const ACCENT_ORANGE = '#C94A00';
-
-function printBrandHeader(subtitle) {
-  const logo = 'assets/brandex-logo-15.png';
-  // Small logo on top only — does not cover content area
-  return `<div class="print-card-wrap">
-    <div class="print-head-row">
-      <img src="${logo}" alt="Brandex" class="print-logo-sm" onerror="this.style.display='none'">
-      <div class="print-head-text">
-        <div class="print-brand">${BRAND_P.name}</div>
-        <div class="print-sub" style="color:${ACCENT_ORANGE};font-weight:700;">${BRAND_P.tagline || 'TRADEMARK REGISTRY'}</div>
-        <div class="print-sub">${BRAND_P.email} · brandex.pk</div>
-      </div>
-    </div>
-    ${subtitle ? `<div class="print-subtitle">${subtitle}</div>` : ''}
-  </div>`;
+function brandPrintHeader(title) {
+  return '<header class="print-brand-header"><div class="print-brand-ident"><img src="assets/brandex-logo-15.png" alt="Brandex logo" class="print-brand-logo"><div class="print-brand-copy"><strong>BRANDEX LAW ASSOCIATE</strong><span>IP LAW FIRM</span><small>INFO@BRANDEX.PK · +92 336 0015004 · BRANDEX.PK</small></div></div><div class="print-job-title">' + clientDisplayText(title || 'LEDGER DOCUMENT') + '</div></header>';
 }
-
+function brandPrintFooter() {
+  return '<footer class="print-brand-footer"><span>BRANDEX.PK · INFO@BRANDEX.PK · +92 336 0015004</span><span>© 2026 BRANDEX. ALL RIGHTS RESERVED.</span><span>DESIGNED &amp; BUILT BY M. NADEEM · 2026</span></footer>';
+}
+window.BRANDEX_PRINT_HEADER = brandPrintHeader;
+window.BRANDEX_PRINT_FOOTER = brandPrintFooter;
 function stagePill(stage) {
   const label = stageLabelP(stage) || 'General';
   return `<span class="print-pill">${label}</span>`;
@@ -42,46 +18,14 @@ function tmPill(tm) {
   return `<span class="print-pill tm">TM ${tm}</span>`;
 }
 
-function paymentAccountsHTML() {
-  const banks = BRAND_P.banks || [];
-  const online = BRAND_P.online || [];
-  let h = '<div class="ack-banks">';
-  h += '<div class="print-group-title" style="margin-bottom:8px;">BANK ACCOUNTS</div>';
-  h += '<div class="pay-grid">';
-  banks.forEach(b => {
-    h += `<div class="pay-acct">
-      <div class="pay-name">${b.name}</div>
-      <div class="pay-line"><span class="pay-lbl">Title</span><span class="pay-val">${b.title || '—'}</span></div>
-      <div class="pay-line"><span class="pay-lbl">A/C #</span><span class="pay-val">${b.account || '—'}</span></div>
-      <div class="pay-line"><span class="pay-lbl">IBAN</span><span class="pay-val">${b.iban || '—'}</span></div>
-    </div>`;
-  });
-  h += '</div>';
-  if (online.length) {
-    h += '<div class="print-group-title" style="margin:10px 0 6px;">ONLINE / WALLET</div>';
-    h += '<div class="pay-grid">';
-    online.forEach(o => {
-      h += `<div class="pay-acct">
-        <div class="pay-name">${o.name}</div>
-        <div class="pay-line"><span class="pay-lbl">Title</span><span class="pay-val">${o.title || '—'}</span></div>
-        <div class="pay-line"><span class="pay-lbl">Number</span><span class="pay-val">${o.account || '—'}</span></div>
-        ${o.note ? `<div class="pay-line"><span class="pay-lbl">Note</span><span class="pay-val">${o.note}</span></div>` : ''}
-      </div>`;
-    });
-    h += '</div>';
-  }
-  h += '</div>';
-  return h;
-}
-
 function buildAckHTML(entry, copyLabel) {
   const client = entry.clients || (mem.clients || []).find(c => c.id === entry.client_id) || {};
   const tm = entry.cases?.tm_no || '—';
   const app = entry.cases?.application_name || '—';
   const series = client.series?.code || '';
   return `
-  <div class="ack-sheet ack-page">
-    ${printBrandHeader('PAYMENT ACKNOWLEDGMENT')}
+  <div class="ack-sheet ack-page print-document">
+    ${brandPrintHeader('PAYMENT ACKNOWLEDGMENT')}
     <div class="ack-copy-bar"><span class="ack-copy">${copyLabel}</span></div>
 
     <div class="print-group">
@@ -101,17 +45,15 @@ function buildAckHTML(entry, copyLabel) {
       <div class="print-group-title">PAYMENT</div>
       <div class="ack-row"><span>Receipt No</span><span><strong>${entry.receipt_no || '—'}</strong></span></div>
       <div class="ack-row"><span>Entry Date</span><span>${entry.entry_date || ''}</span></div>
-      <div class="ack-row"><span>Payment Method</span><span><strong>${entry.payment_method || '—'}</strong></span></div>
       <div class="ack-row"><span>Details / Transfer Date</span><span>${entry.details || ''}</span></div>
       <div class="ack-row total"><span>Amount Received</span><span>PKR ${fmt(entry.amount_received)}</span></div>
     </div>
 
-    ${paymentAccountsHTML()}
     <div class="print-signs">
       <div>_________________<br>Received by</div>
       <div>_________________<br>Client / Bearer</div>
     </div>
-    <div class="print-thanks">Thank you · ${BRAND_P.name} · brandex.pk</div>
+    ${brandPrintFooter()}
   </div>`;
 }
 
@@ -127,7 +69,7 @@ function printAck(entryId) {
     window.print();
     area.style.display = 'none';
     area.innerHTML = '';
-    document.title = 'Brandex Law Associates — Client Ledger';
+    document.title = 'BRANDEX LAW ASSOCIATE — CLIENT LEDGER';
   }, 200);
 }
 
@@ -147,8 +89,7 @@ function printLedgerA4() {
     byTm[key].push(e);
   });
 
-  let body = `<div class="ack-sheet">
-    ${printBrandHeader('CLIENT LEDGER · A4')}
+  let body = `<div class="ack-sheet print-document">${brandPrintHeader('CLIENT LEDGER')}
     <div class="print-group">
       <div class="print-group-title">CLIENT</div>
       <div class="print-big">${series ? series + ' · ' : ''}${c.client_code || '—'}</div>
@@ -172,7 +113,7 @@ function printLedgerA4() {
         <td><span class="entry-kind ${e.entry_type || ''}">${e.entry_type === 'receiving' ? 'RECEIVING' : 'CHARGE'}</span></td>
         <td>${stagePill(e.stage)}</td>
         <td>${e.cases?.application_name || '—'}</td>
-        <td>${e.details || ''}${e.payment_method ? ' · ' + e.payment_method : ''}</td>
+        <td>${e.details || ''}</td>
         <td class="amt">${e.amount_due ? fmt(e.amount_due) : ''}</td>
         <td class="amt">${e.amount_received ? fmt(e.amount_received) : ''}</td>
       </tr>`;
@@ -180,13 +121,13 @@ function printLedgerA4() {
     body += '</tbody></table></div>';
   });
   if (!rows.length) body += '<div class="print-meta" style="text-align:center;">No entries</div>';
-  body += paymentAccountsHTML() + '</div>';
+  body += brandPrintFooter() + '</div>';
 
   const area = document.getElementById('printArea');
   area.innerHTML = body;
   area.style.display = 'block';
   document.title = (c.client_code || 'Ledger') + '_Ledger_A4';
-  setTimeout(() => { window.print(); area.style.display = 'none'; area.innerHTML = ''; document.title = 'Brandex Law Associates — Client Ledger'; }, 200);
+  setTimeout(() => { window.print(); area.style.display = 'none'; area.innerHTML = ''; document.title = 'BRANDEX LAW ASSOCIATE — CLIENT LEDGER'; }, 200);
 }
 
 runReport = function() {
@@ -225,18 +166,21 @@ runReport = function() {
     if (!groups[key]) groups[key] = [];
     groups[key].push(e);
   });
-  let html = '';
-  Object.keys(groups).sort().forEach(k => {
-    html += `<div class="report-group report-divider">
-      <h3><strong>${clientDisplayText(k)}</strong> <span class="report-count">${groups[k].length} entries</span>
-      <label class="report-select"><input type="checkbox" onchange="toggleGroupChecks(this)"> Select group</label></h3>
-      <table class="lt" style="width:100%;min-width:640px;"><thead><tr>
+  let html = `<div class="report-overview"><span class="report-eyebrow">REPORT RESULTS</span><strong>${list.length.toLocaleString()} <small>ENTRIES</small></strong><span class="report-range">${from || 'EARLIEST'} — ${to || 'LATEST'}</span></div>`;
+  const groupKeys = Object.keys(groups).sort();
+  groupKeys.forEach((k, groupIndex) => {
+    const groupDue = groups[k].reduce((sum, e) => sum + Number(e.amount_due || 0), 0);
+    const groupReceived = groups[k].reduce((sum, e) => sum + Number(e.amount_received || 0), 0);
+    html += `<section class="report-group">
+      <header class="report-group-head"><div class="report-group-identity"><span class="report-group-mark" aria-hidden="true">${String(groupIndex + 1).padStart(2, '0')}</span><div><h2>${clientDisplayText(k)}</h2><p>${groups[k].length} ${groups[k].length === 1 ? 'ENTRY' : 'ENTRIES'}</p></div></div><div class="report-group-totals"><span>CHARGED <strong>PKR ${fmt(groupDue)}</strong></span><span>RECEIVED <strong>PKR ${fmt(groupReceived)}</strong></span></div>
+      <label class="report-select"><input type="checkbox" onchange="toggleGroupChecks(this)"> SELECT GROUP</label></header>
+      <div class="report-table-wrap"><table class="lt report-screen-table"><thead><tr>
         <th></th><th>Date</th><th>Client</th><th>Type</th><th>Stage</th><th>TM</th><th>Details</th><th>Due</th><th>Received</th>
       </tr></thead><tbody>`;
     groups[k].forEach(e => { html += reportRowHTML(e); });
-    html += '</tbody></table></div>';
+    html += '</tbody></table></div></section>';
   });
-  if (!Object.keys(groups).length) html = '<div class="empty">No rows match filters</div>';
+  if (!Object.keys(groups).length) html = '<div class="report-empty-state"><span>—</span><h2>NO RECORDS MATCH THESE FILTERS</h2><p>Adjust the filters or choose another date range.</p></div>';
   wrap.innerHTML = html;
   toast(list.length + ' row(s)');
 };
@@ -252,10 +196,21 @@ function reportRowHTML(e) {
     <td>${e.entry_type}</td>
     <td>${badge}</td>
     <td><strong>${clientDisplayText(tm)}</strong></td>
-    <td>${clientDisplayText(e.details || '')}${e.payment_method ? ' · ' + clientDisplayText(e.payment_method) : ''}</td>
+    <td>${clientDisplayText(e.details || '')}</td>
     <td class="amt-due">${e.amount_due ? fmt(e.amount_due) : ''}</td>
     <td class="amt-rec">${e.amount_received ? fmt(e.amount_received) : ''}</td>
   </tr>`;
+}
+
+function resetReportFilters() {
+  ['reportSearch', 'reportClient', 'reportStage', 'reportFrom', 'reportTo'].forEach(id => {
+    const field = document.getElementById(id);
+    if (field) field.value = '';
+  });
+  const group = document.getElementById('reportGroup');
+  if (group) group.value = 'client';
+  if (typeof selectedRows !== 'undefined') selectedRows.clear();
+  runReport();
 }
 
 function toggleGroupChecks(el) {
@@ -290,14 +245,14 @@ function printEntriesA4(list, title) {
     byClient[ck][tk].push(e);
   });
 
-  let body = `<div class="ack-sheet">${printBrandHeader('LEDGER EXPORT · A4')}`;
+  let body = `<div class="ack-sheet print-document">${brandPrintHeader('LEDGER REPORT')}`;
   Object.keys(byClient).sort().forEach(ck => {
     body += `<div class="print-group"><div class="print-group-title">CLIENT</div><div class="print-big">${ck}</div>`;
     Object.keys(byClient[ck]).sort().forEach(tk => {
       const rows = byClient[ck][tk];
       const stages = [...new Set(rows.map(e => e.stage).filter(Boolean))];
       body += `<div class="print-pills" style="margin:8px 0;">${tmPill(tk === 'General' ? null : tk)} ${stages.map(stagePill).join(' ')}</div>
-        <table class="print-table"><thead><tr>
+        <table class="print-table report-print-table"><thead><tr>
           <th>Date</th><th>Type</th><th>Stage</th><th>Details</th><th style="text-align:right;">Due</th><th style="text-align:right;">Rec</th>
         </tr></thead><tbody>`;
       rows.forEach(e => {
@@ -313,13 +268,13 @@ function printEntriesA4(list, title) {
     body += '</div>';
   });
   if (!(list || []).length) body += '<div class="print-meta" style="text-align:center;">No rows</div>';
-  body += paymentAccountsHTML() + '</div>';
+  body += brandPrintFooter() + '</div>';
 
   const area = document.getElementById('printArea');
   area.innerHTML = body;
   area.style.display = 'block';
   document.title = title || 'Ledger_A4';
-  setTimeout(() => { window.print(); area.style.display = 'none'; area.innerHTML = ''; document.title = 'Brandex Law Associates — Client Ledger'; }, 200);
+  setTimeout(() => { window.print(); area.style.display = 'none'; area.innerHTML = ''; document.title = 'BRANDEX LAW ASSOCIATE — CLIENT LEDGER'; }, 200);
 }
 
 console.log('Brandex gaps-print v6 loaded (small logo + aligned banks)');

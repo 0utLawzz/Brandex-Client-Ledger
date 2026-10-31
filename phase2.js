@@ -374,14 +374,14 @@
   }
   function printEntry(entry) {
     var area = document.getElementById('printArea');
-    if (!area) return window.print();
+    if (!area || typeof window.BRANDEX_PRINT_HEADER !== 'function' || typeof window.BRANDEX_PRINT_FOOTER !== 'function') return toast('PRINT TEMPLATE IS NOT READY');
     var previous = area.innerHTML;
     var client = entry.clients || (mem.clients || []).find(function (item) { return item.id === entry.client_id; }) || {};
     var isReceiving = entry.entry_type === 'receiving';
     var amount = isReceiving ? entry.amount_received : entry.amount_due;
     var caseName = entry.cases && (entry.cases.tm_no || entry.cases.folder_no || entry.cases.application_name);
-    area.innerHTML = '<article class="phase2-print-sheet ' + (isReceiving ? 'receiving' : 'charge') + '">' +
-      '<h1>' + (isReceiving ? 'RECEIVING RECORD' : 'CHARGE RECORD') + '</h1>' +
+    area.innerHTML = '<article class="phase2-print-sheet ack-sheet print-document ' + (isReceiving ? 'receiving' : 'charge') + '">' +
+      window.BRANDEX_PRINT_HEADER(isReceiving ? 'RECEIVING ACKNOWLEDGMENT' : 'CHARGE RECEIPT') +
       '<p><strong>CLIENT:</strong> ' + esc(client.client_name || client.client_code || '—') + '</p>' +
       '<p><strong>DATE:</strong> ' + esc(entry.entry_date || '—') + '</p>' +
       '<p><strong>CASE / TM:</strong> ' + esc(caseName || '—') + '</p>' +
@@ -389,7 +389,8 @@
       '<p><strong>DETAILS:</strong> ' + esc(entry.details || '—') + '</p>' +
       '<p class="amount"><strong>' + (isReceiving ? 'RECEIVED' : 'CHARGED') + ':</strong> PKR ' + esc(fmtAmount(amount)) + '</p>' +
       (isReceiving ? '<p><strong>RECEIPT NO:</strong> ' + esc(entry.receipt_no || '—') + '</p>' : '') +
-      '<p><strong>STATUS:</strong> ' + (entry.voided_at ? 'VOIDED' : 'ACTIVE') + '</p></article>';
+      '<p><strong>STATUS:</strong> ' + (entry.voided_at ? 'VOIDED' : 'ACTIVE') + '</p>' +
+      window.BRANDEX_PRINT_FOOTER() + '</article>';
     window.addEventListener('afterprint', function restorePrintArea() {
       area.innerHTML = previous;
     }, { once: true });

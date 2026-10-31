@@ -6,7 +6,7 @@ function stageBadge(s) {
   return `<span class="stage-b ${String(s).toLowerCase()}">${stageLabel(s)}</span>`;
 }
 const BRAND = {
-  name: 'Brandex Law Associates',
+  name: 'BRANDEX LAW ASSOCIATE',
   email: 'info@brandex.pk',
   tagline: 'TRADEMARK REGISTRY',
   banks: [
@@ -121,7 +121,7 @@ loadClients = async function() {
 
 loadDashboard = async function() {
   await Promise.all([loadSeries(), loadClients(), loadEntries()]);
-  const clients = mem.clients.length;
+  const clients = mem.clients.filter(c => c.is_active !== false).length;
   let due = 0, rec = 0;
   activeEntries(mem.entries).forEach(e => {
     due += Number(e.amount_due || 0);
@@ -163,9 +163,10 @@ loadDashboard = async function() {
 renderClients = function() {
   const q = (document.getElementById('clientSearch').value || '').toLowerCase();
   const seriesId = document.getElementById('seriesFilter').value;
+  const showInactive = !!document.getElementById('showInactiveClients')?.checked;
   const grid = document.getElementById('clientsGrid');
   grid.innerHTML = '';
-  let list = mem.clients;
+  let list = mem.clients.filter(c => showInactive || c.is_active !== false);
   if (seriesId) list = list.filter(c => c.series_id === seriesId);
   if (q) list = list.filter(c =>
     (c.client_code || '').toLowerCase().includes(q) ||
@@ -203,8 +204,8 @@ renderClients = function() {
       ]).size;
       const balanceLabel = bal > 0 ? 'Outstanding' : bal < 0 ? 'Credit balance' : 'Settled balance';
       grid.innerHTML += `
-        <article class="client-card" onclick="openClientLedger('${clientDisplayText(c.id)}')" aria-label="${clientDisplayText(c.client_code)} client account">
-          <div class="cc-top"><span class="cc-no">${clientDisplayText(c.client_code)}</span><span class="cc-series">${clientDisplayText(sc)} series</span></div>
+        <article class="client-card${c.is_active === false ? ' is-inactive' : ''}" onclick="openClientLedger('${clientDisplayText(c.id)}')" aria-label="${clientDisplayText(c.client_code)} client account">
+          <div class="cc-top"><span class="cc-no">${clientDisplayText(c.client_code)}</span><span class="cc-series">${clientDisplayText(sc)} series</span>${c.is_active === false ? '<span class="cc-inactive">INACTIVE</span>' : ''}</div>
           <h2 class="cc-name">${clientDisplayText(c.client_name || 'Unnamed client')}</h2>
           <div class="cc-context"><span>${caseCount} ${caseCount === 1 ? 'case' : 'cases'}</span><span>${clientEntries.length} active ${clientEntries.length === 1 ? 'entry' : 'entries'}</span></div>
           <dl class="cc-contact">
@@ -321,7 +322,7 @@ renderClientEntries = function(rows) {
       <td>${voided ? e.entry_type+' · VOID' : e.entry_type}</td>
       <td>${stageBadge(e.stage)}</td>
       <td class="folder-no"><strong>${tm}</strong></td>
-      <td>${e.details||''}${e.payment_method ? ' · '+e.payment_method : ''}</td>
+      <td>${e.details||''}</td>
       <td class="amt-due">${e.amount_due ? fmt(e.amount_due) : ''}</td>
       <td class="amt-rec">${e.amount_received ? fmt(e.amount_received) : ''}</td>
       <td class="date-cell no-print">${actions}</td>
