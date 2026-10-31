@@ -16,7 +16,7 @@ Notable changes to Brandex Client Ledger. Dates use `YYYY-MM-DD`.
 - Added client archive/restore controls that preserve financial history; editing and series creation remain available.
 - Rebuilt the reporting desk with grouped totals, cleaner filters, selectable exports, and responsive fixed-column tables.
 - Removed payment-method details from ledger/report displays, acknowledgments, and printouts while preserving receiving input and stored data.
-- Unified A4 report, charge receipt, and receiving acknowledgment styles without the app's branding header/footer; added the Brandex contact/social footer and M. Nadeem design/build credit.
+- Unified A4 report, charge receipt, and receiving acknowledgment styles with the Brandex logo/contact header and copyright/design credit footer on every print job.
 - Set the client ledger title text to white on its navy identity strip.
 
 ### Release boundary

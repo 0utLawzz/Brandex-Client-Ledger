@@ -21,7 +21,7 @@ The intended entry flow is to create a case in the Ledger with the minimum requi
 - TM-linked charges and receiving entries, optional case/folder/application details, payment methods, and printable receipts.
 - Client and case views, stage balances, dashboard totals, filters, reports, CSV export, and print layouts.
 - Grouped reporting with per-client or case totals; payment methods remain stored for reconciliation but are omitted from ledger/report displays and printouts.
-- Consistent A4 ledger, report, charge receipt, and receiving acknowledgment styles without an app branding header/footer.
+- Consistent A4 ledger, report, charge receipt, and receiving acknowledgment styles with a shared Brandex logo/contact header and copyright/design credit footer on every print job.
 - Public Brandex website/contact/social links and a site credit for design/build.
 - Soft-void support and a stage-payment status RPC intended for trusted CMS server-side use.
 - Ledger-entry search, type/stage/date filters, and sound/animation preferences.

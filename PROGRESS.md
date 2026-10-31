@@ -22,7 +22,7 @@
 - [x] Moved Ledger controls below stage balances; documented the future Case System link as a placeholder.
 - [x] Added client archive/restore while preserving case and financial history; edit and add-series controls remain available.
 - [x] Reworked grouped reports with totals, refreshed filter layout, and set client ledger title text to white on navy.
-- [x] Unified A4 report, ledger, charge receipt, and receiving acknowledgment formatting; omitted payment method from display/print while retaining it in transaction data.
+- [x] Unified A4 report, ledger, charge receipt, and receiving acknowledgment formatting with Brandex header/footer; omitted payment method from display/print while retaining it in transaction data.
 - [x] Added public Brandex contact/social footer and M. Nadeem design/build credit.
 - [ ] Review the Vercel preview; approval is required before merge/release.
 - [ ] After approval: merge, tag, and publish release `v0.3.0`.

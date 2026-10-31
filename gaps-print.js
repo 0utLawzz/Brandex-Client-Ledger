@@ -1,6 +1,14 @@
 // --- Brandex prints v6: small top logo, aligned bank accounts ---
 const STAGE_LABEL_P = { S1: 'Stage 1', S2: 'Stage 2', S3: 'Stage 3', S4: 'Stage 4' };
 function stageLabelP(s) { return (typeof stageLabel === 'function' ? stageLabel(s) : (STAGE_LABEL_P[s] || s || '—')); }
+function brandPrintHeader(title) {
+  return '<header class="print-brand-header"><div class="print-brand-ident"><img src="assets/brandex-logo-15.png" alt="Brandex logo" class="print-brand-logo"><div class="print-brand-copy"><strong>BRANDEX LAW ASSOCIATE</strong><span>IP LAW FIRM</span><small>INFO@BRANDEX.PK · +92 336 0015004 · BRANDEX.PK</small></div></div><div class="print-job-title">' + clientDisplayText(title || 'LEDGER DOCUMENT') + '</div></header>';
+}
+function brandPrintFooter() {
+  return '<footer class="print-brand-footer"><span>BRANDEX.PK · INFO@BRANDEX.PK · +92 336 0015004</span><span>© 2026 BRANDEX. ALL RIGHTS RESERVED.</span><span>DESIGNED &amp; BUILT BY M. NADEEM · 2026</span></footer>';
+}
+window.BRANDEX_PRINT_HEADER = brandPrintHeader;
+window.BRANDEX_PRINT_FOOTER = brandPrintFooter;
 function stagePill(stage) {
   const label = stageLabelP(stage) || 'General';
   return `<span class="print-pill">${label}</span>`;
@@ -17,8 +25,8 @@ function buildAckHTML(entry, copyLabel) {
   const series = client.series?.code || '';
   return `
   <div class="ack-sheet ack-page print-document">
+    ${brandPrintHeader('PAYMENT ACKNOWLEDGMENT')}
     <div class="ack-copy-bar"><span class="ack-copy">${copyLabel}</span></div>
-    <h1 class="print-document-title">PAYMENT ACKNOWLEDGMENT</h1>
 
     <div class="print-group">
       <div class="print-group-title">CLIENT</div>
@@ -45,6 +53,7 @@ function buildAckHTML(entry, copyLabel) {
       <div>_________________<br>Received by</div>
       <div>_________________<br>Client / Bearer</div>
     </div>
+    ${brandPrintFooter()}
   </div>`;
 }
 
@@ -80,7 +89,7 @@ function printLedgerA4() {
     byTm[key].push(e);
   });
 
-  let body = `<div class="ack-sheet print-document"><h1 class="print-document-title">CLIENT LEDGER</h1>
+  let body = `<div class="ack-sheet print-document">${brandPrintHeader('CLIENT LEDGER')}
     <div class="print-group">
       <div class="print-group-title">CLIENT</div>
       <div class="print-big">${series ? series + ' · ' : ''}${c.client_code || '—'}</div>
@@ -112,7 +121,7 @@ function printLedgerA4() {
     body += '</tbody></table></div>';
   });
   if (!rows.length) body += '<div class="print-meta" style="text-align:center;">No entries</div>';
-  body += '</div>';
+  body += brandPrintFooter() + '</div>';
 
   const area = document.getElementById('printArea');
   area.innerHTML = body;
@@ -236,7 +245,7 @@ function printEntriesA4(list, title) {
     byClient[ck][tk].push(e);
   });
 
-  let body = `<div class="ack-sheet print-document"><h1 class="print-document-title">LEDGER REPORT</h1>`;
+  let body = `<div class="ack-sheet print-document">${brandPrintHeader('LEDGER REPORT')}`;
   Object.keys(byClient).sort().forEach(ck => {
     body += `<div class="print-group"><div class="print-group-title">CLIENT</div><div class="print-big">${ck}</div>`;
     Object.keys(byClient[ck]).sort().forEach(tk => {
@@ -259,7 +268,7 @@ function printEntriesA4(list, title) {
     body += '</div>';
   });
   if (!(list || []).length) body += '<div class="print-meta" style="text-align:center;">No rows</div>';
-  body += '</div>';
+  body += brandPrintFooter() + '</div>';
 
   const area = document.getElementById('printArea');
   area.innerHTML = body;

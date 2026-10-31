@@ -779,10 +779,10 @@
     var tm = entry.cases && (entry.cases.tm_no || entry.cases.folder_no || entry.cases.application_name) || '—';
     var area = document.getElementById('printArea');
     if (!area) return toast('PRINT AREA MISSING');
-    area.innerHTML = '<div class="ack-sheet print-document"><h1 class="print-document-title">CHARGE RECEIPT</h1>' +
+    area.innerHTML = '<div class="ack-sheet print-document">' + window.BRANDEX_PRINT_HEADER('CHARGE RECEIPT') +
       '<div class="print-group"><div class="print-group-title">CLIENT</div><div class="print-big">' + escapeHTML(client.client_code || '—') + '</div><div class="print-big-sub">' + escapeHTML(client.client_name || '—') + '</div></div>' +
       '<div class="print-group"><div class="print-group-title">CASE DETAILS</div><div class="ack-row"><span>TM / FOLDER</span><strong>' + escapeHTML(tm) + '</strong></div><div class="ack-row"><span>APPLICATION</span><strong>' + escapeHTML(entry.cases && entry.cases.application_name || '—') + '</strong></div><div class="ack-row"><span>STAGE</span><strong>' + escapeHTML(entry.stage || 'GENERAL') + '</strong></div><div class="ack-row"><span>DATE</span><strong>' + escapeHTML(entry.entry_date || '') + '</strong></div></div>' +
-      '<div class="ack-row"><span>DETAILS</span><strong>' + escapeHTML(entry.details || '—') + '</strong></div><div class="ack-row total"><span>AMOUNT DUE</span><strong>PKR ' + fmt(entry.amount_due) + '</strong></div></div>';
+      '<div class="ack-row"><span>DETAILS</span><strong>' + escapeHTML(entry.details || '—') + '</strong></div><div class="ack-row total"><span>AMOUNT DUE</span><strong>PKR ' + fmt(entry.amount_due) + '</strong></div>' + window.BRANDEX_PRINT_FOOTER() + '</div>';
     area.style.display = 'block';
     document.title = 'CHARGE_' + String(entry.id).slice(0, 8) + '_A4';
     setTimeout(function () { window.print(); area.style.display = 'none'; area.innerHTML = ''; document.title = 'BRANDEX LAW ASSOCIATE — CLIENT LEDGER'; }, 200);

@@ -449,7 +449,7 @@ function printReceipt(entry) {
   const client = entry.clients || mem.clients.find(c => c.id === entry.client_id) || {};
   const area = document.getElementById('printArea');
   if (!area) return toast('Print area missing');
-  area.innerHTML = `<div class="ack-sheet print-document"><h1 class="print-document-title">Payment acknowledgment</h1>
+  area.innerHTML = `<div class="ack-sheet print-document">${window.BRANDEX_PRINT_HEADER('PAYMENT ACKNOWLEDGMENT')}
     <div class="print-group"><div class="print-group-title">Client</div><div class="print-big">${clientDisplayText(client.client_code || '—')}</div><div class="print-big-sub">${clientDisplayText(client.client_name || '—')}</div></div>
     <div class="print-group"><div class="print-group-title">Payment details</div>
       <div class="ack-row"><span>Receipt No</span><strong>${clientDisplayText(entry.receipt_no || '—')}</strong></div>
@@ -457,13 +457,18 @@ function printReceipt(entry) {
       <div class="ack-row"><span>Stage</span><strong>${clientDisplayText(entry.stage || 'General')}</strong></div>
       <div class="ack-row"><span>Details</span><strong>${clientDisplayText(entry.details || '—')}</strong></div>
       <div class="ack-row total"><span>Amount received</span><strong>PKR ${fmt(entry.amount_received)}</strong></div>
-    </div><div class="print-signs"><div>_________________<br>Received by</div><div>_________________<br>Client / Bearer</div></div>
+    </div><div class="print-signs"><div>_________________<br>Received by</div><div>_________________<br>Client / Bearer</div></div>${window.BRANDEX_PRINT_FOOTER()}
   </div>`;
   area.style.display = 'block';
   document.title = 'Receipt_' + (entry.receipt_no || String(entry.id).slice(0, 8)) + '_A4';
   setTimeout(() => { window.print(); area.style.display = 'none'; area.innerHTML = ''; document.title = 'BRANDEX LAW ASSOCIATE — CLIENT LEDGER'; }, 200);
 }
-function printLedger() { window.print(); }
+function printLedger() {
+  if (currentClientId && typeof printLedgerA4 === 'function') return printLedgerA4();
+  const rows = window._reportRows || (typeof activeEntries === 'function' ? activeEntries(mem.entries || []) : (mem.entries || []));
+  if (rows.length && typeof printEntriesA4 === 'function') return printEntriesA4(rows, 'Ledger_A4');
+  return toast('OPEN A CLIENT LEDGER OR RUN A REPORT FIRST');
+}
 
 function runReport() {
   const q = (document.getElementById('reportSearch').value || '').toLowerCase();
@@ -515,7 +520,13 @@ function exportCSV(selectedOnly) {
   a.click();
   toast('CSV downloaded');
 }
-function exportImage() { toast('Use Print → Save as PDF for now'); window.print(); }
+function exportImage() {
+  toast('Use Print → Save as PDF for now');
+  if (currentClientId && typeof printLedgerA4 === 'function') return printLedgerA4();
+  const rows = window._reportRows || [];
+  if (rows.length && typeof printEntriesA4 === 'function') return printEntriesA4(rows, 'Ledger_Export_A4');
+  return toast('RUN A REPORT FIRST');
+}
 
 (async function init() {
   if (!SUPABASE_URL || !SUPABASE_ANON) {

@@ -40,7 +40,7 @@ charge 1 ── many? receiving links by linked_entry_id (optional)
 - Clients: client list/search and account ledger.
 - Cases/folders: TM/case list, filters, dates, stages, payment states.
 - Stage summary and reports: charges, applied receipts, outstanding amounts.
-- Receipt and print views: individual charge receipts, receiving acknowledgments, client ledgers, and selected/grouped reports. These share one A4 style without an app branding header/footer; payment method remains stored but is not printed or shown in ledger/report rows.
+- Receipt and print views: individual charge receipts, receiving acknowledgments, client ledgers, and selected/grouped reports. These share one A4 style with a Brandex logo/contact header and copyright/design credit footer on each job; payment method remains stored but is not printed or shown in ledger/report rows.
 - CSV/image exports: current or selected ledger data.
 - App footer: Brandex public website, email, WhatsApp, LinkedIn and copyright/build credit.
 
