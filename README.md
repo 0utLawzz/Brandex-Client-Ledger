@@ -5,7 +5,7 @@ The client-side financial ledger for Brandex Law Associates. It records client a
 **Production:** [brandex-client-ledger.vercel.app](https://brandex-client-ledger.vercel.app)
 
 **Repository:** [0utLawzz/Brandex-Client-Ledger](https://github.com/0utLawzz/Brandex-Client-Ledger)
-**Current baseline:** `0.3.0` release candidate (preview review pending)
+**Current baseline:** `v0.3.0` (production release)
 
 ## Product boundary
 

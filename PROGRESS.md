@@ -4,8 +4,8 @@
 
 **Production application:** [brandex-client-ledger.vercel.app](https://brandex-client-ledger.vercel.app)
 
-**Code baseline:** `main` at `d6e1356` when this review began.
-**This branch:** UI and repository baseline candidate; awaiting preview review.
+**Code baseline:** `main` at `4ee151f` (PR #7, deployed 1 November 2026).
+**Release:** `v0.3.0` approved and deployed to production.
 
 ## Current baseline
 
@@ -24,8 +24,8 @@
 - [x] Reworked grouped reports with totals, refreshed filter layout, and set client ledger title text to white on navy.
 - [x] Unified A4 report, ledger, charge receipt, and receiving acknowledgment formatting with Brandex header/footer; omitted payment method from display/print while retaining it in transaction data.
 - [x] Added public Brandex contact/social footer and M. Nadeem design/build credit.
-- [ ] Review the Vercel preview; approval is required before merge/release.
-- [ ] After approval: merge, tag, and publish release `v0.3.0`.
+- [x] Review the Vercel preview and approve production release.
+- [x] Merge PR #7 to `main`, deploy production, and create tag `v0.3.0`.
 
 ## Known mismatches and operational cautions
 

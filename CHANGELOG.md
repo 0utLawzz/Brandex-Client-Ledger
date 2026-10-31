@@ -2,7 +2,7 @@
 
 Notable changes to Brandex Client Ledger. Dates use `YYYY-MM-DD`.
 
-## [0.3.0] — 2026-11-01 (release candidate; preview approval pending)
+## [0.3.0] — 2026-11-01
 
 ### Changed
 
@@ -21,8 +21,7 @@ Notable changes to Brandex Client Ledger. Dates use `YYYY-MM-DD`.
 
 ### Release boundary
 
-- No database schema, production data, or production deployment changed. This candidate changes Ledger UI behavior and client active/archive controls.
-- This version is a candidate until the Vercel preview is reviewed and the user approves merge and release.
+- No database schema or production financial data changed. The Ledger UI release was approved, merged through PR #7, and deployed to production.
 
 ## [0.2.0] — 2026-10
 
