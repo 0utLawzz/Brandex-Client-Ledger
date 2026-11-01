@@ -4,9 +4,10 @@
 
 **Production application:** [brandex-client-ledger.vercel.app](https://brandex-client-ledger.vercel.app)
 
-**Code baseline:** `main` at `4ee151f` (PR #7, deployed 1 November 2026).
+**Production code baseline:** `main` at `4ee151f` (PR #7, deployed 1 November 2026).
+**Current implementation branch:** `feature/post-release-annotations` (pending commit/push and preview review).
 **Release:** `v0.3.0` approved and deployed to production.
-**Pending handover:** [Post-release annotations and workflow review](docs/handovers/2026-11-01-post-release-handover.md).
+**Implementation details:** [Post-release annotations and workflow review](docs/handovers/2026-11-01-post-release-handover.md).
 
 ## Current baseline
 
@@ -27,11 +28,13 @@
 - [x] Added public Brandex contact/social footer and M. Nadeem design/build credit.
 - [x] Review the Vercel preview and approve production release.
 - [x] Merge PR #7 to `main`, deploy production, and create tag `v0.3.0`.
-- [ ] Review the post-release annotations and workflow concerns listed in the handover. No implementation has started.
+- [x] Implement the post-release annotations and workflow updates on `feature/post-release-annotations`; see handover checklist.
+- [x] Commit/push branch; Vercel preview is READY and PR #9 is open for review.
+- [ ] Review the protected preview without test writes; obtain an isolated Supabase preview database for migration 007. Production remains unchanged.
 
 ## Known mismatches and operational cautions
 
-- User-confirmed policy allows a case to begin at a later stage, but current browser wrappers enforce prior-stage clearance. Do not assume this is already implemented correctly.
+- The feature branch implements later-stage starts and forward-only progression in the UI and proposed migration; the migration has not been applied.
 - Case creation is coupled to posting a charge or receiving in the current UI; a distinct minimal case creation/handoff flow is not implemented.
 - CMS handoff/payment-status consumption is not complete. Closed PRs are preserved as historical attempts, not active implementation plans.
 - Client removal is a recoverable archive (`is_active = false`) so existing financial references are not erased; inactive accounts can be shown and restored.

@@ -15,7 +15,7 @@ function stagePill(stage) {
 }
 function tmPill(tm) {
   if (!tm || tm === '—') return '<span class="print-pill muted">No TM</span>';
-  return `<span class="print-pill tm">TM ${tm}</span>`;
+  return `<span class="print-pill tm">TRADEMARK NUMBER ${tm}</span>`;
 }
 
 function buildAckHTML(entry, copyLabel) {
@@ -32,12 +32,13 @@ function buildAckHTML(entry, copyLabel) {
       <div class="print-group-title">CLIENT</div>
       <div class="print-big">${series ? series + ' · ' : ''}${client.client_code || '—'}</div>
       <div class="print-big-sub">${client.client_name || '—'}</div>
-      <div class="print-meta">${client.phone || '—'} · ${client.email || '—'} · ${client.city || '—'}</div>
+      <div class="print-meta">${client.phone || '—'} · ${client.email || '—'} · ${client.city || '—'}${client.postal_address ? ' · ' + client.postal_address : ''}</div>
     </div>
 
     <div class="print-group">
-      <div class="print-group-title">CASE / TM</div>
+      <div class="print-group-title">CASE / TRADEMARK NUMBER</div>
       <div class="print-pills">${tmPill(tm)} ${stagePill(entry.stage)}</div>
+      <div class="print-meta"><strong>Class:</strong> ${entry.cases?.class_no || '—'} · <strong>Folder Number:</strong> ${entry.cases?.folder_no || '—'}</div>
       <div class="print-meta"><strong>Application:</strong> ${app}</div>
     </div>
 
@@ -94,7 +95,7 @@ function printLedgerA4() {
       <div class="print-group-title">CLIENT</div>
       <div class="print-big">${series ? series + ' · ' : ''}${c.client_code || '—'}</div>
       <div class="print-big print-client-name">${c.client_name || '—'}</div>
-      <div class="print-meta">Phone: ${c.phone || '—'} · Email: ${c.email || '—'} · City: ${c.city || '—'}</div>
+      <div class="print-meta">Phone: ${c.phone || '—'} · Email: ${c.email || '—'} · City: ${c.city || '—'}${c.postal_address ? ' · Mailing / Postal Address: ' + c.postal_address : ''}</div>
     </div>`;
 
   Object.keys(byTm).sort().forEach(tmKey => {
@@ -105,13 +106,15 @@ function printLedgerA4() {
       <div class="print-pills">${tmPill(tmKey === 'General / No TM' ? null : tmKey)} ${stageSet.map(stagePill).join(' ')}</div>
       <table class="print-table">
         <thead><tr>
-          <th>Date</th><th>Type</th><th>Stage</th><th>Application</th><th>Details</th><th style="text-align:right;">Due</th><th style="text-align:right;">Rec</th>
+          <th>Date</th><th>Type</th><th>Stage</th><th>Trademark Number / Folder</th><th>Class</th><th>Application</th><th>Details</th><th style="text-align:right;">Due</th><th style="text-align:right;">Received</th>
         </tr></thead><tbody>`;
     list.forEach(e => {
       body += `<tr>
         <td>${e.entry_date || ''}</td>
         <td><span class="entry-kind ${e.entry_type || ''}">${e.entry_type === 'receiving' ? 'RECEIVING' : 'CHARGE'}</span></td>
         <td>${stagePill(e.stage)}</td>
+        <td>${e.cases?.tm_no || e.cases?.folder_no || '—'}</td>
+        <td>${e.cases?.class_no || '—'}</td>
         <td>${e.cases?.application_name || '—'}</td>
         <td>${e.details || ''}</td>
         <td class="amt">${e.amount_due ? fmt(e.amount_due) : ''}</td>
@@ -134,6 +137,7 @@ runReport = function() {
   const safeVal = (id) => { const el = document.getElementById(id); return el ? (el.value || '') : ''; };
   const q = (safeVal('reportSearch') || '').toLowerCase();
   const stage = safeVal('reportStage');
+  const classNo = safeVal('reportClass');
   const clientId = safeVal('reportClient');
   const group = safeVal('reportGroup') || 'client';
   const from = safeVal('reportFrom');
@@ -142,6 +146,7 @@ runReport = function() {
   if (typeof activeEntries === 'function') list = activeEntries(list);
   if (clientId) list = list.filter(e => e.client_id === clientId);
   if (stage) list = list.filter(e => e.stage === stage);
+  if (classNo) list = list.filter(e => String(e.cases?.class_no || '') === classNo);
   if (from) list = list.filter(e => (e.entry_date || '') >= from);
   if (to) list = list.filter(e => (e.entry_date || '') <= to);
   if (q) list = list.filter(e => {
@@ -175,7 +180,7 @@ runReport = function() {
       <header class="report-group-head"><div class="report-group-identity"><span class="report-group-mark" aria-hidden="true">${String(groupIndex + 1).padStart(2, '0')}</span><div><h2>${clientDisplayText(k)}</h2><p>${groups[k].length} ${groups[k].length === 1 ? 'ENTRY' : 'ENTRIES'}</p></div></div><div class="report-group-totals"><span>CHARGED <strong>PKR ${fmt(groupDue)}</strong></span><span>RECEIVED <strong>PKR ${fmt(groupReceived)}</strong></span></div>
       <label class="report-select"><input type="checkbox" onchange="toggleGroupChecks(this)"> SELECT GROUP</label></header>
       <div class="report-table-wrap"><table class="lt report-screen-table"><thead><tr>
-        <th></th><th>Date</th><th>Client</th><th>Type</th><th>Stage</th><th>TM</th><th>Details</th><th>Due</th><th>Received</th>
+        <th></th><th>Date</th><th>Client</th><th>Type</th><th>Stage</th><th>Trademark Number</th><th>Class</th><th>Details</th><th>Due</th><th>Received</th>
       </tr></thead><tbody>`;
     groups[k].forEach(e => { html += reportRowHTML(e); });
     html += '</tbody></table></div></section>';
@@ -189,6 +194,8 @@ function reportRowHTML(e) {
   const code = e.clients?.client_code || '—';
   const tm = e.cases?.tm_no || e.cases?.application_name || '—';
   const badge = (typeof stageBadge === 'function') ? stageBadge(e.stage) : (e.stage || '—');
+  const classNo = Number(e.cases?.class_no || 0);
+  const classChip = classNo ? `<span class="entry-class-chip class-color-${(classNo - 1) % 6 + 1}">${classNo}</span>` : '—';
   return `<tr class="${e.entry_type}-row" data-id="${e.id}">
     <td><input type="checkbox" class="row-check" aria-label="Select ${clientDisplayText(code)} ${clientDisplayText(e.entry_date || '')} ${clientDisplayText(e.entry_type)}" value="${e.id}" onchange="toggleRow('${e.id}',this.checked)"></td>
     <td class="date-cell">${e.entry_date || ''}</td>
@@ -196,6 +203,7 @@ function reportRowHTML(e) {
     <td>${e.entry_type}</td>
     <td>${badge}</td>
     <td><strong>${clientDisplayText(tm)}</strong></td>
+    <td>${classChip}</td>
     <td>${clientDisplayText(e.details || '')}</td>
     <td class="amt-due">${e.amount_due ? fmt(e.amount_due) : ''}</td>
     <td class="amt-rec">${e.amount_received ? fmt(e.amount_received) : ''}</td>
@@ -203,7 +211,7 @@ function reportRowHTML(e) {
 }
 
 function resetReportFilters() {
-  ['reportSearch', 'reportClient', 'reportStage', 'reportFrom', 'reportTo'].forEach(id => {
+  ['reportSearch', 'reportClient', 'reportStage', 'reportClass', 'reportFrom', 'reportTo'].forEach(id => {
     const field = document.getElementById(id);
     if (field) field.value = '';
   });
@@ -253,12 +261,12 @@ function printEntriesA4(list, title) {
       const stages = [...new Set(rows.map(e => e.stage).filter(Boolean))];
       body += `<div class="print-pills" style="margin:8px 0;">${tmPill(tk === 'General' ? null : tk)} ${stages.map(stagePill).join(' ')}</div>
         <table class="print-table report-print-table"><thead><tr>
-          <th>Date</th><th>Type</th><th>Stage</th><th>Details</th><th style="text-align:right;">Due</th><th style="text-align:right;">Rec</th>
+          <th>Date</th><th>Type</th><th>Stage</th><th>Trademark Number / Folder</th><th>Class</th><th>Application</th><th>Details</th><th style="text-align:right;">Due</th><th style="text-align:right;">Received</th>
         </tr></thead><tbody>`;
       rows.forEach(e => {
         body += `<tr>
           <td>${e.entry_date || ''}</td><td><span class="entry-kind ${e.entry_type || ''}">${e.entry_type === 'receiving' ? 'RECEIVING' : 'CHARGE'}</span></td><td>${stagePill(e.stage)}</td>
-          <td>${e.details || ''}</td>
+          <td>${e.cases?.tm_no || e.cases?.folder_no || '—'}</td><td>${e.cases?.class_no || '—'}</td><td>${e.cases?.application_name || '—'}</td><td>${e.details || ''}</td>
           <td class="amt">${e.amount_due ? fmt(e.amount_due) : ''}</td>
           <td class="amt">${e.amount_received ? fmt(e.amount_received) : ''}</td>
         </tr>`;
