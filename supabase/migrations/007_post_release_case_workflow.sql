@@ -18,7 +18,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS clients_unassigned_code_unique
 
 ALTER TABLE public.cases
   ADD COLUMN IF NOT EXISTS class_no smallint,
-  ADD COLUMN IF NOT EXISTS has_ribbon boolean NOT NULL DEFAULT false;
+  ADD COLUMN IF NOT EXISTS drive_folder_id text;
 
 ALTER TABLE public.cases DROP CONSTRAINT IF EXISTS cases_class_no_range;
 ALTER TABLE public.cases ADD CONSTRAINT cases_class_no_range

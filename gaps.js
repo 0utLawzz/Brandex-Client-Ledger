@@ -332,14 +332,25 @@ renderClientEntries = function(rows) {
 };
 
 async function voidEntry(id) {
-  if (!confirm('Void this entry?')) return;
-  if (!sb) return toast('Supabase required');
-  const reason = (prompt('Void reason (optional)') || 'VOIDED').toUpperCase();
-  const { error } = await sb.from('ledger_entries').update({ voided_at: new Date().toISOString(), void_reason: reason }).eq('id', id);
-  if (error) return toast(error.message + ' — run migration 002');
-  toast('Entry voided');
-  await loadEntries();
-  if (currentClientId) openClientLedger(currentClientId); else loadDashboard();
+  if (!sb) return toast('SUPABASE REQUIRED');
+  const entry = (mem.entries || []).find(row => row.id === id);
+  if (!entry || entry.voided_at) return toast('ACTIVE ENTRY NOT FOUND. REFRESH THE LEDGER.');
+  if (!confirm('Void this entry? It will remain in the audit history.')) return;
+  const reason = (prompt('Void reason (optional)') || 'VOIDED').trim().toUpperCase();
+  try {
+    const result = await sb.from('ledger_entries')
+      .update({ voided_at: new Date().toISOString(), void_reason: reason })
+      .eq('id', id).is('voided_at', null);
+    if (result.error) return toast('VOID FAILED: ' + result.error.message);
+    await loadEntries();
+    const updated = (mem.entries || []).find(row => row.id === id);
+    if (!updated || !updated.voided_at) return toast('VOID WAS NOT CONFIRMED BY THE DATABASE. CHECK ACCESS POLICIES AND REFRESH.');
+    await loadDashboard();
+    if (currentClientId) await openClientLedger(currentClientId);
+    toast('ENTRY VOIDED · RETAINED AS AUDIT HISTORY');
+  } catch (error) {
+    toast('VOID FAILED: ' + (error.message || error));
+  }
 }
 
 const _openChargeModalGaps = typeof openChargeModal === 'function' ? openChargeModal : function(){};
@@ -471,19 +482,31 @@ function onEditCaseSelect() {
   document.getElementById('ecFolder').value = c.folder_no || '';
   document.getElementById('ecAppName').value = c.application_name || '';
   if (document.getElementById('ecClass')) document.getElementById('ecClass').value = c.class_no || '';
-  if (document.getElementById('ecRibbon')) document.getElementById('ecRibbon').checked = !!c.has_ribbon;
+  if (document.getElementById('ecDriveFolderId')) document.getElementById('ecDriveFolderId').value = c.drive_folder_id || '';
+  if (document.getElementById('ecDriveFolderName')) document.getElementById('ecDriveFolderName').textContent = c.drive_folder_id ? 'DRIVE FOLDER LINKED' : 'NO DRIVE FOLDER SELECTED';
 }
 async function saveEditCase() {
   const id = document.getElementById('ecCaseId').value;
   if (!id || !sb) return;
-  const { error } = await sb.from('cases').update({
+  const classValue = document.getElementById('ecClass').value;
+  const driveFolderId = document.getElementById('ecDriveFolderId').value.trim();
+  const payload = {
     tm_no: document.getElementById('ecTM').value.trim() || null,
     folder_no: document.getElementById('ecFolder').value.trim() || null,
-    application_name: document.getElementById('ecAppName').value.trim() || null,
-    class_no: document.getElementById('ecClass').value ? Number(document.getElementById('ecClass').value) : null,
-    has_ribbon: document.getElementById('ecRibbon').checked
-  }).eq('id', id);
-  if (error) return toast(error.message);
+    application_name: document.getElementById('ecAppName').value.trim() || null
+  };
+  const schema = await sb.from('cases').select('class_no, drive_folder_id').eq('id', id).maybeSingle();
+  if (schema.error && /class_no|drive_folder_id|column .* does not exist/i.test(schema.error.message || '')) {
+    if (classValue) return toast('CLASS CANNOT BE SAVED YET: DATABASE MIGRATION 007 IS REQUIRED. OTHER CASE FIELDS WERE NOT CHANGED.');
+    if (driveFolderId) return toast('DRIVE FOLDER CANNOT BE SAVED YET: DATABASE MIGRATION 007 IS REQUIRED. OTHER CASE FIELDS WERE NOT CHANGED.');
+  } else if (schema.error) {
+    return toast('CASE COULD NOT BE CHECKED: ' + schema.error.message);
+  } else {
+    payload.class_no = classValue ? Number(classValue) : null;
+    payload.drive_folder_id = driveFolderId || null;
+  }
+  const { error } = await sb.from('cases').update(payload).eq('id', id);
+  if (error) return toast('CASE UPDATE FAILED: ' + error.message);
   toast('Case updated');
   closeModal('modalEditCase');
   await loadEntries();

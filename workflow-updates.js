@@ -19,6 +19,14 @@
   function clientLabel(client) {
     return [seriesPrefix(client) || '—', client.client_code || '—', client.client_name || 'Unnamed client'].join(' — ');
   }
+  function clientHeaderCode(client) {
+    var prefix = seriesPrefix(client);
+    var code = String(client && client.client_code || '').trim();
+    if (!code) return prefix || 'CLIENT';
+    return prefix && !new RegExp('^' + prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?:[- ]|$)', 'i').test(code)
+      ? prefix + ' — ' + code
+      : code;
+  }
   function populateClassSelect(select) {
     if (!select || select.dataset.classReady) return;
     var hasBlank = select.querySelector('option[value=""]');
@@ -26,6 +34,71 @@
     select.innerHTML = blank;
     for (var n = 1; n <= 45; n += 1) select.insertAdjacentHTML('beforeend', '<option value="' + n + '">' + n + '</option>');
     select.dataset.classReady = '1';
+  }
+  var googleLibrariesPromise = null;
+  function loadGoogleScript(src) {
+    return new Promise(function (resolve, reject) {
+      var existing = document.querySelector('script[src="' + src + '"]');
+      if (existing) {
+        if (existing.dataset.loaded === '1') return resolve();
+        existing.addEventListener('load', resolve, { once: true });
+        existing.addEventListener('error', reject, { once: true });
+        return;
+      }
+      var script = document.createElement('script');
+      script.src = src; script.async = true;
+      script.onload = function () { script.dataset.loaded = '1'; resolve(); };
+      script.onerror = function () { reject(new Error('GOOGLE PICKER LIBRARIES COULD NOT BE LOADED')); };
+      document.head.appendChild(script);
+    });
+  }
+  function loadGooglePickerLibraries() {
+    if (googleLibrariesPromise) return googleLibrariesPromise;
+    googleLibrariesPromise = Promise.all([
+      loadGoogleScript('https://apis.google.com/js/api.js'),
+      loadGoogleScript('https://accounts.google.com/gsi/client')
+    ]).then(function () {
+      return new Promise(function (resolve, reject) {
+        if (!window.gapi || !window.google || !google.accounts || !google.accounts.oauth2) return reject(new Error('GOOGLE IDENTITY LIBRARY IS UNAVAILABLE'));
+        window.gapi.load('picker', { callback: resolve, onerror: function () { reject(new Error('GOOGLE PICKER API FAILED TO LOAD')); } });
+      });
+    });
+    return googleLibrariesPromise;
+  }
+  function chooseDriveFolder() {
+    var config = window.BRANDEX_GOOGLE_DRIVE_CONFIG || {};
+    if (!config.clientId || !config.apiKey || !config.appId) {
+      return toast('GOOGLE DRIVE PICKER NEEDS AN OAUTH CLIENT ID, API KEY AND CLOUD PROJECT NUMBER. SEE GOOGLE DRIVE SETUP NOTES.');
+    }
+    loadGooglePickerLibraries().then(function () {
+      var tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: config.clientId,
+        scope: 'https://www.googleapis.com/auth/drive.file',
+        callback: function (tokenResponse) {
+          if (tokenResponse.error) return toast('GOOGLE DRIVE AUTHORIZATION FAILED: ' + tokenResponse.error);
+          var folderView = new google.picker.DocsView(google.picker.ViewId.FOLDERS)
+            .setIncludeFolders(true).setSelectFolderEnabled(true);
+          var picker = new google.picker.PickerBuilder()
+            .setAppId(config.appId)
+            .setDeveloperKey(config.apiKey)
+            .setOAuthToken(tokenResponse.access_token)
+            .setOrigin(window.location.protocol + '//' + window.location.host)
+            .addView(folderView)
+            .setTitle('SELECT CASE FOLDER')
+            .setCallback(function (data) {
+              if (data.action !== google.picker.Action.PICKED || !data.docs || !data.docs.length) return;
+              var folder = data.docs[0];
+              document.getElementById('ecDriveFolderId').value = folder.id || '';
+              document.getElementById('ecDriveFolderName').textContent = folder.name || 'DRIVE FOLDER SELECTED';
+            }).build();
+          picker.setVisible(true);
+        }
+      });
+      tokenClient.requestAccessToken({ prompt: '' });
+    }).catch(function (error) {
+      googleLibrariesPromise = null;
+      toast(error.message || 'GOOGLE DRIVE PICKER COULD NOT OPEN');
+    });
   }
   function populateSeriesSelects() {
     var modal = document.getElementById('cSeries');
@@ -198,7 +271,6 @@
       classCell.innerHTML = classNo ? '<span class="entry-class-chip class-color-' + ((classNo - 1) % 6 + 1) + '">' + classNo + '</span>' : '<span class="evidence-empty">—</span>';
       tr.cells[5].after(classCell);
       if (tr.cells[8]) tr.cells[8].insertAdjacentHTML('beforeend', stageAndEntryRelationships(entry));
-      if (caseRow && caseRow.has_ribbon) tr.classList.add('case-ribbon-row');
     });
   }
   window.openCaseStageLedger = function (caseId, stage) {
@@ -257,6 +329,9 @@
     if (input) input.addEventListener('input', function () { updateAmountWords(id, outputId); });
   });
   attachTMMatch();
+
+  var driveFolderButton = document.getElementById('pickDriveFolder');
+  if (driveFolderButton) driveFolderButton.addEventListener('click', chooseDriveFolder);
 
   var oldOpenCharge = window.openChargeModal;
   if (typeof oldOpenCharge === 'function') window.openChargeModal = function (preClientId) {
@@ -328,19 +403,8 @@
     if (filter) filter.hidden = false;
     var c = (mem.clients || []).find(function (row) { return row.id === currentClientId; });
     var title = document.getElementById('ledgerTitle');
-    if (title && c) title.textContent = clientLabel(c) + ' — CLIENT LEDGER';
+    if (title && c) title.textContent = clientHeaderCode(c);
     return result;
-  };
-
-  var oldVoidEntry = window.voidEntry;
-  if (typeof oldVoidEntry === 'function') window.voidEntry = async function (id) {
-    await oldVoidEntry.apply(this, arguments);
-    await loadEntries();
-    var entry = (mem.entries || []).find(function (row) { return row.id === id; });
-    if (!entry || !entry.voided_at) return toast('VOID DID NOT SAVE. REFRESH AND CHECK THE ENTRY.');
-    if (currentClientId) await openClientLedger(currentClientId);
-    else await loadDashboard();
-    toast('ENTRY VOIDED · RETAINED AS AUDIT HISTORY');
   };
 
   var oldSaveCharge = window.saveCharge;
@@ -374,14 +438,6 @@
   if (typeof oldSaveReceiving === 'function') window.saveReceiving = async function () {
     var result = await oldSaveReceiving.apply(this, arguments);
     await loadDashboard();
-    if (currentClientId) await openClientLedger(currentClientId);
-    return result;
-  };
-
-  var oldSaveEditCase = window.saveEditCase;
-  if (typeof oldSaveEditCase === 'function') window.saveEditCase = async function () {
-    var result = await oldSaveEditCase.apply(this, arguments);
-    await loadEntries();
     if (currentClientId) await openClientLedger(currentClientId);
     return result;
   };

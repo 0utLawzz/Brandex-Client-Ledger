@@ -202,7 +202,7 @@
     var upperSeries = seriesCode.toUpperCase();
     var codeAlreadyPrefixed = upperSeries && (upperCode.indexOf(upperSeries + '-') === 0 || upperCode.indexOf(upperSeries + ' ') === 0 || upperCode === upperSeries);
     var displayCode = codeAlreadyPrefixed ? clientCode : [seriesCode, clientCode].filter(Boolean).join(' · ');
-    if (title) title.textContent = (displayCode || 'CLIENT') + ' — CLIENT LEDGER';
+    if (title) title.textContent = displayCode || 'CLIENT';
     var sub = document.getElementById('ledgerSub');
     if (sub) {
       sub.innerHTML = '<div class="ledger-profile"><div class="ledger-profile-copy"><h2 class="ledger-client-name">' + clientDisplayText(c.client_name || 'Unnamed client') + '</h2>' +
@@ -603,15 +603,14 @@
       }, 0);
       var badges = row.stages.length ? row.stages.map(function (stage) {
         var status = row.totals.stages[stage];
-        return '<button type="button" class="case-status ' + (status.paid ? 'cleared' : 'outstanding') + ' case-stage-link" data-case-stage="' + stage + '" data-case-id="' + escapeHTML(row.id) + '" title="DUE PKR ' + fmt(status.due) + ' · RECEIVED PKR ' + fmt(status.received) + ' · OUTSTANDING PKR ' + fmt(status.outstanding) + '">' +
-          stage + ' ' + (status.paid ? 'CLEARED' : 'DUE') + ' · ' + fmt(status.due) + '/' + fmt(status.received) + '</button>';
+        return '<button type="button" class="case-status ' + (status.paid ? 'cleared' : 'outstanding') + ' case-stage-link" data-case-stage="' + stage + '" data-case-id="' + escapeHTML(row.id) + '">' +
+          'STAGE ' + stage.slice(1) + ' ' + (status.paid ? 'CLEARED' : 'DUE') + '</button>';
       }).join(' ') : '<span class="case-status">NO CHARGES</span>';
       var classNo = row.item.class_no ? Number(row.item.class_no) : null;
       var classChip = classNo ? '<span class="entry-class-chip class-color-' + ((classNo - 1) % 6 + 1) + '">' + classNo + '</span>' : '—';
-      var ribbon = row.item.has_ribbon ? '<span class="case-ribbon">🎗 RIBBON</span>' : '';
       var completedLabel = row.completed ? '<span class="case-complete-label">COMPLETED</span><br>' : '';
       return '<tr data-case-id="' + escapeHTML(row.id) + '" class="' + (row.completed ? 'case-completed-row' : '') + '">' +
-        '<td>' + completedLabel + '<strong>' + escapeHTML(row.item.tm_no || 'NO TRADEMARK NUMBER') + '</strong>' + ribbon + '</td>' +
+        '<td>' + completedLabel + '<strong>' + escapeHTML(row.item.tm_no || 'NO TRADEMARK NUMBER') + '</strong></td>' +
         '<td>' + escapeHTML(row.item.folder_no || '—') + '</td>' +
         '<td>' + escapeHTML(row.item.application_name || '—') + '</td>' +
         '<td>' + badges + '</td>' +
@@ -975,12 +974,12 @@
       if (!sb) return;
       for (var entryOffset = 0; ; entryOffset += pageSize) {
         var entryQuery = sb.from('ledger_entries')
-          .select('*, clients(client_code, client_name, email, phone, city, postal_address, series(code,name,prefix)), cases(id, tm_no, folder_no, application_name, class_no, has_ribbon)')
+          .select('*, clients(client_code, client_name, email, phone, city, postal_address, series(code,name,prefix)), cases(id, tm_no, folder_no, application_name, class_no, drive_folder_id)')
           .order('entry_date', { ascending: false })
           .order('created_at', { ascending: false })
           .range(entryOffset, entryOffset + pageSize - 1);
         var entryResult = await entryQuery;
-        if (entryResult.error && /postal_address|class_no|has_ribbon|evidence_path|column .* does not exist/i.test(entryResult.error.message || '')) {
+        if (entryResult.error && /postal_address|class_no|drive_folder_id|evidence_path|column .* does not exist/i.test(entryResult.error.message || '')) {
           entryResult = await sb.from('ledger_entries')
             .select('*, clients(client_code, client_name, email, phone, city, series(code,name,prefix)), cases(id, tm_no, folder_no, application_name)')
             .order('entry_date', { ascending: false }).order('created_at', { ascending: false })
@@ -995,10 +994,10 @@
       }
       for (var caseOffset = 0; ; caseOffset += pageSize) {
         var result = await sb.from('cases')
-          .select('id, client_id, tm_no, folder_no, application_name, status, class_no, has_ribbon')
+          .select('id, client_id, tm_no, folder_no, application_name, status, class_no, drive_folder_id')
           .order('created_at', { ascending: false })
           .range(caseOffset, caseOffset + pageSize - 1);
-        if (result.error && /class_no|has_ribbon|column .* does not exist/i.test(result.error.message || '')) {
+        if (result.error && /class_no|drive_folder_id|column .* does not exist/i.test(result.error.message || '')) {
           result = await sb.from('cases').select('id, client_id, tm_no, folder_no, application_name, status')
             .order('created_at', { ascending: false }).range(caseOffset, caseOffset + pageSize - 1);
         }
